@@ -24,31 +24,33 @@ We love new ideas! Please open an issue with:
 1. **Fork the repository**
 
 2. **Create a branch**
+
+3. 8486963487:AAGSxdnypIrT9rdLtUWywwwHj44HjM2j5co
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
-3. **Make your changes**
+4. **Make your changes**
    - Follow the existing code style
    - Add docstrings to functions
    - Update documentation if needed
 
-4. **Test your changes**
+5. **Test your changes**
    - Ensure all existing functionality still works
    - Test your new feature thoroughly
    - Check for Python syntax errors
 
-5. **Commit your changes**
+6. **Commit your changes**
    ```bash
    git commit -m "Add feature: description"
    ```
 
-6. **Push to your fork**
+7. **Push to your fork**
    ```bash
    git push origin feature/your-feature-name
    ```
 
-7. **Create a Pull Request**
+8. **Create a Pull Request**
    - Provide a clear description
    - Reference any related issues
    - Wait for review
