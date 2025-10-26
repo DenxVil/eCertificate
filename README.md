@@ -275,13 +275,15 @@ The application provides REST API endpoints:
 
 ## Security Considerations
 
-- Change the `SECRET_KEY` in production
+- **IMPORTANT**: Set `FLASK_ENV=production` in your `.env` file when deploying to production to disable debug mode
+- Change the `SECRET_KEY` in production to a strong random value
 - Use HTTPS in production
 - Keep your `.env` file secure and never commit it
 - Use app passwords for email services
 - Regularly update dependencies
 - Implement rate limiting for production use
 - Add authentication for the web interface in production
+- Never run Flask with `debug=True` in production environments
 
 ## Contributing
 
