@@ -24,6 +24,8 @@ A powerful web application for generating and distributing digital certificates 
 
 ## Installation
 
+> **🪟 Windows Users:** We have a dedicated [Windows Setup Guide](README-WINDOWS.md) with PowerShell scripts and detailed instructions. For the best experience on Windows, follow that guide instead.
+
 ### Prerequisites
 
 - Python 3.8 or higher
