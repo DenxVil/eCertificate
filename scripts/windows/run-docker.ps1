@@ -129,8 +129,8 @@ Write-Host "Preparing volume mounts..." -ForegroundColor Yellow
 $currentDir = (Get-Location).Path
 $volumeMounts = @()
 
-# Mount common directories if they exist
-$dirsToMount = @("templates", "static", "output", "uploads", "generated_certificates")
+# Mount data directories if they exist (not code, to avoid conflicts)
+$dirsToMount = @("uploads", "generated_certificates")
 foreach ($dir in $dirsToMount) {
     if (Test-Path $dir) {
         $volumeMounts += "-v"

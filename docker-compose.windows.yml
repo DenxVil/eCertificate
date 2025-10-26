@@ -11,13 +11,10 @@ services:
     env_file:
       - .env
     volumes:
-      # Mount application folders for development
-      - ./app:/app/app
-      - ./templates:/app/templates
-      - ./static:/app/static
+      # Mount application code and data folders for development
+      # Only mount folders that exist to avoid errors
       - ./uploads:/app/uploads
       - ./generated_certificates:/app/generated_certificates
-      - ./output:/app/output
     restart: unless-stopped
     environment:
       - FLASK_ENV=development
