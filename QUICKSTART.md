@@ -84,7 +84,7 @@ This guide will help you get started with Denx Certificate Generator in 5 minute
 ## Production Deployment
 
 For production:
-1. Set `FLASK_ENV=production` in `.env`
+1. Set `FLASK_DEBUG=False` in `.env` (or remove FLASK_ENV and set config to 'production')
 2. Change `SECRET_KEY` to a strong random value
 3. Use a production WSGI server (gunicorn included)
 4. Set up HTTPS

@@ -56,9 +56,12 @@ We love new ideas! Please open an issue with:
 ## Development Setup
 
 ```bash
-# Clone your fork
+# Clone your fork (replace YOUR_USERNAME with your GitHub username)
 git clone https://github.com/YOUR_USERNAME/eCertificate.git
 cd eCertificate
+
+# Or clone the original repository
+# git clone https://github.com/DenxVil/eCertificate.git
 
 # Create virtual environment
 python -m venv venv
