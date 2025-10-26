@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+
+# GitHub
+.github
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.sample
+
+# Documentation
+*.md
+LICENSE
+CONTRIBUTING.md
+
+# Test and coverage
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Database
+*.db
+
+# Application specific (these will be created in the container)
+uploads/
+generated_certificates/
+
+# Samples
+sample_participants.csv
+sample_template.png

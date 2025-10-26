@@ -1,0 +1,47 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/ecertificate:${{ github.sha }} .
+          docker tag ${{ secrets.ACR_LOGIN_SERVER }}/ecertificate:${{ github.sha }} ${{ secrets.ACR_LOGIN_SERVER }}/ecertificate:latest
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/ecertificate:${{ github.sha }}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/ecertificate:latest
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          images: ${{ secrets.ACR_LOGIN_SERVER }}/ecertificate:${{ github.sha }}
+
+      - name: Logout from Azure
+        if: always()
+        run: |
+          az logout
