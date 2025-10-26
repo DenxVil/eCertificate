@@ -213,7 +213,7 @@ After setting up all secrets and pushing to the `main` branch:
 
 ## Additional Resources
 
-- [Azure Container Registry Documentation](https://docs.microsoft.com/azure/container-registry/)
-- [Azure App Service Documentation](https://docs.microsoft.com/azure/app-service/)
+- [Azure Container Registry Documentation](https://learn.microsoft.com/azure/container-registry/)
+- [Azure App Service Documentation](https://learn.microsoft.com/azure/app-service/)
 - [GitHub Actions for Azure](https://github.com/Azure/actions)
 - [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
