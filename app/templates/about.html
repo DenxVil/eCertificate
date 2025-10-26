@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>About Denx Certificate Generator</h1>
+
+<div style="margin-top: 2rem;">
+    <h2>What is Denx Certificate Generator?</h2>
+    <p>
+        Denx Certificate Generator is a powerful web application designed to simplify the process of 
+        creating and distributing digital certificates. Whether you're organizing a workshop, webinar, 
+        course, or any event that requires participant certificates, our platform makes it easy.
+    </p>
+    
+    <h2 style="margin-top: 2rem;">Key Features</h2>
+    <ul style="line-height: 2;">
+        <li><strong>Custom Templates:</strong> Upload your own certificate designs in PNG, JPG, or SVG format</li>
+        <li><strong>Event Management:</strong> Create and manage multiple events with different certificate templates</li>
+        <li><strong>Bulk Processing:</strong> Upload participant lists via CSV or Excel files</li>
+        <li><strong>Automated Generation:</strong> Certificates are generated automatically with participant names</li>
+        <li><strong>Email Delivery:</strong> Certificates are sent directly to participants via email</li>
+        <li><strong>Telegram Integration:</strong> Control the system through our Telegram bot</li>
+        <li><strong>Job Tracking:</strong> Monitor the status of certificate generation jobs in real-time</li>
+    </ul>
+    
+    <h2 style="margin-top: 2rem;">How It Works</h2>
+    <ol style="line-height: 2;">
+        <li>Create an event and upload a certificate template</li>
+        <li>Create a job for the event and upload participant data (CSV/Excel)</li>
+        <li>The system automatically generates certificates for each participant</li>
+        <li>Certificates are emailed to participants automatically</li>
+        <li>Track job progress and view generation statistics</li>
+    </ol>
+    
+    <h2 style="margin-top: 2rem;">Telegram Bot</h2>
+    <p>
+        Our Telegram bot provides a convenient interface for certificate generation:
+    </p>
+    <ul style="line-height: 2;">
+        <li><code>/start</code> - Get started with the bot</li>
+        <li><code>/newjob</code> - Create a new certificate generation job</li>
+        <li><code>/status &lt;job_id&gt;</code> - Check job status</li>
+        <li><code>/events</code> - List available events</li>
+    </ul>
+    
+    <h2 style="margin-top: 2rem;">Technology Stack</h2>
+    <p>
+        Built with modern technologies:
+    </p>
+    <ul style="line-height: 2;">
+        <li><strong>Backend:</strong> Flask (Python)</li>
+        <li><strong>Database:</strong> SQLAlchemy with SQLite</li>
+        <li><strong>Certificate Generation:</strong> Pillow (PIL)</li>
+        <li><strong>Email:</strong> Flask-Mail</li>
+        <li><strong>Bot:</strong> python-telegram-bot</li>
+    </ul>
+    
+    <div style="margin-top: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 5px;">
+        <p><strong>Need Help?</strong> Check out our README.md file for detailed setup instructions and usage guidelines.</p>
+    </div>
+</div>
+{% endblock %}

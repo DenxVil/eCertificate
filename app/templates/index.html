@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="text-align: center; padding: 2rem 0;">
+    <h1 style="font-size: 3rem; margin-bottom: 1rem;">🎓 Welcome to Denx Certificate Generator</h1>
+    <p style="font-size: 1.2rem; color: #666; margin-bottom: 2rem;">
+        Powerful certificate generation and distribution made easy
+    </p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 3rem;">
+        <div style="padding: 2rem; background: #f8f9fa; border-radius: 10px;">
+            <h3>📝 Manage Events</h3>
+            <p>Create and manage events with custom certificate templates</p>
+            <a href="/events/create" class="btn" style="margin-top: 1rem;">Create Event</a>
+        </div>
+        
+        <div style="padding: 2rem; background: #f8f9fa; border-radius: 10px;">
+            <h3>⚡ Generate Certificates</h3>
+            <p>Generate certificates for participants and send via email</p>
+            <a href="/jobs/create" class="btn" style="margin-top: 1rem;">Create Job</a>
+        </div>
+        
+        <div style="padding: 2rem; background: #f8f9fa; border-radius: 10px;">
+            <h3>📱 Telegram Bot</h3>
+            <p>Use our Telegram bot for easy certificate generation</p>
+            <a href="#" class="btn" style="margin-top: 1rem;">Learn More</a>
+        </div>
+    </div>
+    
+    <div style="margin-top: 3rem; padding: 2rem; background: #e3f2fd; border-radius: 10px;">
+        <h2>Features</h2>
+        <ul style="list-style: none; text-align: left; max-width: 600px; margin: 0 auto;">
+            <li style="padding: 0.5rem 0;">✅ Upload custom certificate templates (PNG, JPG, SVG)</li>
+            <li style="padding: 0.5rem 0;">✅ Manage multiple events</li>
+            <li style="padding: 0.5rem 0;">✅ Bulk participant upload via CSV/Excel</li>
+            <li style="padding: 0.5rem 0;">✅ Automatic certificate generation</li>
+            <li style="padding: 0.5rem 0;">✅ Email delivery to participants</li>
+            <li style="padding: 0.5rem 0;">✅ Telegram bot integration</li>
+            <li style="padding: 0.5rem 0;">✅ Job status tracking</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

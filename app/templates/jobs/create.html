@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Create Certificate Generation Job</h1>
+
+<form method="POST" enctype="multipart/form-data" style="max-width: 800px;">
+    <div class="form-group">
+        <label for="event_id">Select Event *</label>
+        <select id="event_id" name="event_id" required>
+            <option value="">-- Select an Event --</option>
+            {% for event in events %}
+                <option value="{{ event.id }}">{{ event.name }}</option>
+            {% endfor %}
+        </select>
+        {% if not events %}
+            <small style="color: #e74c3c; display: block; margin-top: 0.5rem;">
+                No events available. <a href="/events/create">Create an event first</a>.
+            </small>
+        {% endif %}
+    </div>
+    
+    <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Add Participants</h3>
+    
+    <div style="padding: 1rem; background: #f8f9fa; border-radius: 5px; margin-bottom: 2rem;">
+        <h4>Option 1: Single Participant</h4>
+        <div class="form-group">
+            <label for="single_name">Name</label>
+            <input type="text" id="single_name" name="single_name" placeholder="John Doe">
+        </div>
+        
+        <div class="form-group">
+            <label for="single_email">Email</label>
+            <input type="email" id="single_email" name="single_email" placeholder="john@example.com">
+        </div>
+    </div>
+    
+    <div style="padding: 1rem; background: #f8f9fa; border-radius: 5px; margin-bottom: 2rem;">
+        <h4>Option 2: Bulk Upload (CSV/Excel)</h4>
+        <div class="form-group">
+            <label for="participants_file">Upload File</label>
+            <input type="file" id="participants_file" name="participants_file" accept=".csv,.xlsx,.xls">
+            <small style="color: #666; display: block; margin-top: 0.5rem;">
+                File must contain 'name' and 'email' columns.
+            </small>
+        </div>
+        
+        <div style="margin-top: 1rem; padding: 1rem; background: white; border-radius: 5px;">
+            <strong>CSV Format Example:</strong>
+            <pre style="margin-top: 0.5rem; padding: 0.5rem; background: #f0f0f0; border-radius: 3px;">name,email
+John Doe,john@example.com
+Jane Smith,jane@example.com</pre>
+        </div>
+    </div>
+    
+    <div style="padding: 1rem; background: #fff3cd; border-radius: 5px; margin-bottom: 2rem;">
+        <strong>Note:</strong> You can use either single participant entry OR bulk upload. If both are provided, 
+        both will be included in the job.
+    </div>
+    
+    <div style="display: flex; gap: 1rem;">
+        <button type="submit" class="btn">Create Job</button>
+        <a href="/jobs/" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}
