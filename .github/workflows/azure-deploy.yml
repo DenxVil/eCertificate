@@ -15,24 +15,39 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Get ACR login server
         id: acr
         run: |
           set -e
-          ACR_NAME=${{ secrets.ACR_NAME }}
+          ACR_NAME="${{ secrets.ACR_NAME }}"
+          if [ -z "$ACR_NAME" ]; then
+            echo "Error: ACR_NAME secret is not set"
+            exit 1
+          fi
           LOGIN_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
           echo "LOGIN_SERVER=$LOGIN_SERVER" >> $GITHUB_OUTPUT
+          echo "ACR login server: $LOGIN_SERVER"
+
+      - name: Login to Azure Container Registry
+        env:
+          ACR_NAME: ${{ secrets.ACR_NAME }}
+        run: |
+          echo "Logging into ACR..."
+          az acr login --name $ACR_NAME
 
       - name: Build and push Docker image to ACR
         env:
           LOGIN_SERVER: ${{ steps.acr.outputs.LOGIN_SERVER }}
-          ACR_NAME: ${{ secrets.ACR_NAME }}
           IMAGE_NAME: ecertificate-app
         run: |
-          echo "Logging into ACR..."
-          az acr login --name $ACR_NAME
-          docker build -t $LOGIN_SERVER/$IMAGE_NAME:latest .
+          echo "Building Docker image..."
+          docker build -t $LOGIN_SERVER/$IMAGE_NAME:latest -t $LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }} .
+          echo "Pushing Docker image to ACR..."
           docker push $LOGIN_SERVER/$IMAGE_NAME:latest
+          docker push $LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}
 
       - name: Configure Web App to use pushed image
         env:
@@ -40,7 +55,9 @@ jobs:
           WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }}
           LOGIN_SERVER: ${{ steps.acr.outputs.LOGIN_SERVER }}
         run: |
+          echo "Configuring Web App..."
           az webapp config container set \
             --name $WEBAPP_NAME \
             --resource-group $RESOURCE_GROUP \
-            --docker-custom-image-name $LOGIN_SERVER/ecertificate-app:latest
+            --docker-custom-image-name $LOGIN_SERVER/ecertificate-app:latest \
+            --docker-registry-server-url https://$LOGIN_SERVER
