@@ -15,11 +15,11 @@ jobs:
     - name: 'Az CLI login'
       uses: azure/login@v1
       with:
-        creds: ${{{{ secrets.AZURE_CREDENTIALS }}}}
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Build and push image to ACR
       run: |
-        az acr build --image e-certificate-app:{{{{ github.sha }}}} --registry {acr_name} .
+        az acr build --image e-certificate-app:${{ github.sha }} --registry $acr_name .
       env:
         acr_name: denxcertacr
 
@@ -28,7 +28,7 @@ jobs:
       with:
         app-name: denx-certificate-app
         resource-group-name: nexus-ai-rg
-        images: 'denxcertacr.azurecr.io/e-certificate-app:{{{{ github.sha }}}}'
+        images: 'denxcertacr.azurecr.io/e-certificate-app:${{ github.sha }}'
 
     - name: Azure logout
       run: |
