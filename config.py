@@ -12,9 +12,8 @@ class Config:
     # Flask
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     
-    # Database
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///certificates.db')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # MongoDB
+    MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/ecertificate')
     
     # Mail
     MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com')

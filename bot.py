@@ -1,25 +1,28 @@
 """Telegram bot for certificate generation."""
 import os
 import sys
+import json
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 from dotenv import load_dotenv
 import asyncio
+from datetime import datetime
+from bson.objectid import ObjectId
+import tempfile
 
 # Add parent directory to path to import app modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import create_app
-from app.models import db, Event, Job, Participant
+from app import create_app, mongo
+from app.models.mongo_models import Event, Job, Participant
 from app.utils import parse_csv_file
 from app.routes.jobs import process_job
-import tempfile
 
 # Load environment variables
 load_dotenv()
 
 # Conversation states
-SELECTING_EVENT, UPLOADING_CSV = range(2)
+SELECTING_EVENT, UPLOADING_CSV, CUSTOMIZING_CERTIFICATE = range(3)
 
 # Flask app instance
 flask_app = create_app()
@@ -51,25 +54,14 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 *Creating a New Job:*
 1. Use /newjob command
-2. Select an event from the list
-3. Upload a CSV file with participant data
+2. Select an event from the list by replying with its number.
+3. Upload a CSV file with participant data.
 
 *CSV File Format:*
-Your CSV file should have two columns:
-- name: Participant's name
-- email: Participant's email address
-
-Example:
-```
-name,email
-John Doe,john@example.com
-Jane Smith,jane@example.com
-```
+Your CSV file should have two columns: 'name' and 'email'.
 
 *Checking Job Status:*
 Use /status <job_id> to check the progress of your certificate generation job.
-
-For more information, visit our documentation.
     """
     await update.message.reply_text(help_message, parse_mode='Markdown')
 
@@ -77,17 +69,17 @@ For more information, visit our documentation.
 async def events_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /events command - list all events."""
     with flask_app.app_context():
-        events = Event.query.all()
+        events = Event.find_all()
         
         if not events:
             await update.message.reply_text("No events available. Please create an event first.")
             return
         
         message = "*Available Events:*\n\n"
-        for event in events:
-            message += f"*{event.id}.* {event.name}\n"
-            if event.description:
-                message += f"   _{event.description}_\n"
+        for i, event in enumerate(events):
+            message += f"*{i + 1}.* {event['name']}\n"
+            if event.get('description'):
+                message += f"   _{event['description']}_\n"
             message += "\n"
         
         await update.message.reply_text(message, parse_mode='Markdown')
@@ -96,7 +88,7 @@ async def events_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def newjob_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /newjob command - start new job creation."""
     with flask_app.app_context():
-        events = Event.query.all()
+        events = Event.find_all()
         
         if not events:
             await update.message.reply_text(
@@ -104,11 +96,13 @@ async def newjob_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return ConversationHandler.END
         
+        context.user_data['events_list'] = [{'_id': str(e['_id']), 'name': e['name']} for e in events]
+
         message = "*Select an event for certificate generation:*\n\n"
-        for event in events:
-            message += f"{event.id}. {event.name}\n"
+        for i, event in enumerate(events):
+            message += f"{i + 1}. {event['name']}\n"
         
-        message += "\nReply with the event ID number:"
+        message += "\nReply with the event number:"
         
         await update.message.reply_text(message, parse_mode='Markdown')
         return SELECTING_EVENT
@@ -117,129 +111,146 @@ async def newjob_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def select_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle event selection."""
     try:
-        event_id = int(update.message.text.strip())
+        event_index = int(update.message.text.strip()) - 1
+        events_list = context.user_data.get('events_list', [])
         
-        with flask_app.app_context():
-            event = Event.query.get(event_id)
-            
-            if not event:
-                await update.message.reply_text(
-                    "Invalid event ID. Please use /newjob to start again."
-                )
-                return ConversationHandler.END
-            
-            # Store event ID in context
-            context.user_data['event_id'] = event_id
-            context.user_data['event_name'] = event.name
+        if 0 <= event_index < len(events_list):
+            selected_event = events_list[event_index]
+            context.user_data['event_id'] = selected_event['_id']
+            context.user_data['event_name'] = selected_event['name']
             
             await update.message.reply_text(
-                f"Selected event: *{event.name}*\n\n"
+                f"Selected event: *{selected_event['name']}*\n\n"
                 f"Now, please upload a CSV file with participant data.\n\n"
                 f"The CSV should have 'name' and 'email' columns.",
                 parse_mode='Markdown'
             )
             return UPLOADING_CSV
+        else:
+            await update.message.reply_text(
+                "Invalid event number. Please use /newjob to start again."
+            )
+            return ConversationHandler.END
             
-    except ValueError:
+    except (ValueError, IndexError):
         await update.message.reply_text(
-            "Please send a valid event ID number."
+            "Please send a valid event number."
         )
         return SELECTING_EVENT
 
 
 async def receive_csv(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle CSV file upload."""
-    if not update.message.document:
-        await update.message.reply_text(
-            "Please upload a CSV file."
-        )
-        return UPLOADING_CSV
-    
     document = update.message.document
-    
-    if not document.file_name.endswith('.csv'):
-        await update.message.reply_text(
-            "Please upload a CSV file (must have .csv extension)."
-        )
+    if not document or not document.file_name.endswith('.csv'):
+        await update.message.reply_text("Please upload a valid CSV file.")
         return UPLOADING_CSV
     
     try:
-        # Download the file
         file = await document.get_file()
         
-        # Save to temporary location
         with tempfile.NamedTemporaryFile(mode='wb', suffix='.csv', delete=False) as tmp_file:
             await file.download_to_drive(tmp_file.name)
-            tmp_path = tmp_file.name
+            context.user_data['csv_path'] = tmp_file.name
         
-        # Parse CSV
-        participants = parse_csv_file(tmp_path)
-        
-        if not participants:
-            await update.message.reply_text(
-                "No valid participants found in CSV file. Please check the format."
-            )
-            os.unlink(tmp_path)
-            return UPLOADING_CSV
-        
-        # Create job
+        await update.message.reply_text(
+            "CSV received. Would you like to customize the certificate layout? (yes/no)"
+        )
+        return CUSTOMIZING_CERTIFICATE
+
+    except Exception as e:
+        await update.message.reply_text(f"Error processing CSV file: {str(e)}")
+        return UPLOADING_CSV
+
+async def handle_customization_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle user's choice for certificate customization."""
+    choice = update.message.text.lower().strip()
+    if choice == 'yes':
+        await update.message.reply_text(
+            "Please provide the customization details in JSON format. Example:\n"
+            '```json\n'
+            '[\n'
+            '  {"text": "participant_name", "x": 0.5, "y": 0.4, "font_size": 60, "align": "center"},\n'
+            '  {"text": "event_name", "x": 0.5, "y": 0.6, "font_size": 40, "align": "center"}\n'
+            ']\n'
+            '```'
+        )
+        # Re-using the same state to wait for the JSON
+        return CUSTOMIZING_CERTIFICATE 
+    elif choice == 'no':
+        context.user_data['customization_json'] = None
+        await process_and_create_job(update, context)
+        return ConversationHandler.END
+    # If the message is likely JSON, process it as customization
+    elif update.message.text.strip().startswith('['):
+        return await receive_customization(update, context)
+    else:
+        await update.message.reply_text("Invalid choice. Please enter 'yes' or 'no', or provide the JSON customization.")
+        return CUSTOMIZING_CERTIFICATE
+
+async def receive_customization(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Receive and process certificate customization JSON."""
+    try:
+        # Validate JSON
+        json.loads(update.message.text)
+        context.user_data['customization_json'] = update.message.text
+        await update.message.reply_text("Customization received. Processing job...")
+        await process_and_create_job(update, context)
+        return ConversationHandler.END
+    except json.JSONDecodeError:
+        await update.message.reply_text("Invalid JSON format. Please try again, or type 'no' to use the default layout.")
+        return CUSTOMIZING_CERTIFICATE
+
+async def process_and_create_job(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Create and process the certificate generation job."""
+    tmp_path = context.user_data.get('csv_path')
+    if not tmp_path:
+        await update.message.reply_text("Something went wrong. Please start over with /newjob.")
+        return
+
+    try:
+        participants_data = parse_csv_file(tmp_path)
+        if not participants_data:
+            await update.message.reply_text("No valid participants found in CSV.")
+            return
+
         with flask_app.app_context():
             event_id = context.user_data['event_id']
             chat_id = str(update.message.chat_id)
+            customization_json = context.user_data.get('customization_json')
+
+            job_id = Job.create(event_id, telegram_chat_id=chat_id)
             
-            # Create job
-            job = Job(
-                event_id=event_id,
-                telegram_chat_id=chat_id
-            )
-            db.session.add(job)
-            db.session.commit()
+            participants_to_insert = [
+                {"job_id": ObjectId(job_id), "name": p['name'], "email": p['email'], "created_at": datetime.utcnow()}
+                for p in participants_data
+            ]
+            if participants_to_insert:
+                Participant.create_many(participants_to_insert)
             
-            # Add participants
-            for p_data in participants:
-                participant = Participant(
-                    job_id=job.id,
-                    name=p_data['name'],
-                    email=p_data['email']
-                )
-                db.session.add(participant)
-            
-            job.total_certificates = len(participants)
-            db.session.commit()
-            
-            job_id = job.id
-            
-            # Start processing in background
+            Job.set_total(job_id, len(participants_to_insert))
+
             import threading
             thread = threading.Thread(
                 target=process_job,
-                args=(flask_app, job_id)
+                args=(flask_app, job_id, customization_json)
             )
             thread.daemon = True
             thread.start()
-        
-        # Clean up temporary file
+
         os.unlink(tmp_path)
-        
         await update.message.reply_text(
             f"✅ *Job Created Successfully!*\n\n"
             f"Job ID: {job_id}\n"
             f"Event: {context.user_data['event_name']}\n"
-            f"Participants: {len(participants)}\n\n"
+            f"Participants: {len(participants_data)}\n\n"
             f"Processing has started. Use /status {job_id} to check progress.",
             parse_mode='Markdown'
         )
-        
-        # Clear user data
-        context.user_data.clear()
-        return ConversationHandler.END
-        
     except Exception as e:
-        await update.message.reply_text(
-            f"Error processing CSV file: {str(e)}\n\n"
-            f"Please make sure your CSV has 'name' and 'email' columns."
-        )
-        return UPLOADING_CSV
+        await update.message.reply_text(f"Error creating job: {str(e)}")
+    finally:
+        context.user_data.clear()
 
 
 async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -256,51 +267,39 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
     
     if not args:
-        await update.message.reply_text(
-            "Please provide a job ID. Usage: /status <job_id>"
-        )
+        await update.message.reply_text("Usage: /status <job_id>")
         return
     
     try:
-        job_id = int(args[0])
+        job_id = args[0]
         
         with flask_app.app_context():
-            job = Job.query.get(job_id)
+            job = Job.find_by_id(job_id)
             
             if not job:
-                await update.message.reply_text(
-                    f"Job {job_id} not found."
-                )
+                await update.message.reply_text(f"Job {job_id} not found.")
                 return
             
-            event = Event.query.get(job.event_id)
+            event = Event.find_by_id(job['event_id'])
             
-            # Build status message
-            status_emoji = {
-                'pending': '⏳',
-                'processing': '⚙️',
-                'completed': '✅',
-                'failed': '❌'
-            }
+            status_emoji = {'pending': '⏳', 'processing': '⚙️', 'completed': '✅', 'failed': '❌'}
             
-            message = f"{status_emoji.get(job.status, '❓')} *Job Status*\n\n"
-            message += f"Job ID: {job.id}\n"
-            message += f"Event: {event.name}\n"
-            message += f"Status: {job.status.upper()}\n"
-            message += f"Progress: {job.generated_certificates}/{job.total_certificates}\n"
+            message = f"{status_emoji.get(job['status'], '❓')} *Job Status*\n\n"
+            message += f"Job ID: {job['_id']}\n"
+            message += f"Event: {event['name'] if event else 'Unknown'}\n"
+            message += f"Status: {job['status'].upper()}\n"
+            message += f"Progress: {job.get('generated_certificates', 0)}/{job.get('total_certificates', 0)}\n"
             
-            if job.completed_at:
-                message += f"Completed: {job.completed_at.strftime('%Y-%m-%d %H:%M:%S')}\n"
+            if job.get('completed_at'):
+                message += f"Completed: {job['completed_at'].strftime('%Y-%m-%d %H:%M:%S')}\n"
             
-            if job.error_message:
-                message += f"\n⚠️ Error: {job.error_message}\n"
+            if job.get('error_message'):
+                message += f"\n⚠️ Error: {job['error_message'].splitlines()[0]}\n" # Show first line of error
             
             await update.message.reply_text(message, parse_mode='Markdown')
             
-    except ValueError:
-        await update.message.reply_text(
-            "Invalid job ID. Please provide a number."
-        )
+    except Exception as e:
+        await update.message.reply_text(f"Invalid job ID or error fetching status: {e}")
 
 
 def main():
@@ -311,27 +310,26 @@ def main():
         print("Error: TELEGRAM_BOT_TOKEN not set in environment variables")
         return
     
-    # Create application
     application = Application.builder().token(token).build()
     
-    # Add handlers
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("events", events_command))
     application.add_handler(CommandHandler("status", status_command))
     
-    # Conversation handler for new job
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("newjob", newjob_command)],
         states={
             SELECTING_EVENT: [MessageHandler(filters.TEXT & ~filters.COMMAND, select_event)],
             UPLOADING_CSV: [MessageHandler(filters.Document.ALL, receive_csv)],
+            CUSTOMIZING_CERTIFICATE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_customization_choice)
+            ],
         },
         fallbacks=[CommandHandler("cancel", cancel_command)],
     )
     application.add_handler(conv_handler)
     
-    # Start the bot
     print("Starting Telegram bot...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 

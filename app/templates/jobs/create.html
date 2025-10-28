@@ -52,6 +52,21 @@ Jane Smith,jane@example.com</pre>
         </div>
     </div>
     
+    <div style="padding: 1rem; background: #e9ecef; border-radius: 5px; margin-bottom: 2rem;">
+        <h4>Option 3: Customize Certificate Layout (JSON)</h4>
+        <div class="form-group">
+            <label for="customization_json">Layout Configuration</label>
+            <textarea id="customization_json" name="customization_json" rows="10" placeholder='[
+  {"text": "participant_name", "x": 0.5, "y": 0.4, "font_size": 60, "font_name": "arial.ttf", "align": "center"},
+  {"text": "event_name", "x": 0.5, "y": 0.6, "font_size": 40, "font_name": "arial.ttf", "align": "center"},
+  {"text": "date", "x": 0.5, "y": 0.8, "font_size": 30, "font_name": "arial.ttf", "align": "center"}
+]'></textarea>
+            <small style="color: #666; display: block; margin-top: 0.5rem;">
+                Use relative coordinates (0.0 to 1.0) for x and y.
+            </small>
+        </div>
+    </div>
+
     <div style="padding: 1rem; background: #fff3cd; border-radius: 5px; margin-bottom: 2rem;">
         <strong>Note:</strong> You can use either single participant entry OR bulk upload. If both are provided, 
         both will be included in the job.

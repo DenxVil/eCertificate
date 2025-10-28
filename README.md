@@ -211,6 +211,39 @@ eCertificate/
 └── README.md               # This file
 ```
 
+## Deploying
+
+There are two simple ways to deploy this project to Azure:
+
+1) Use the included PowerShell script (local, interactive)
+
+   - Prereqs: Azure CLI installed & logged in (`az login`), Docker Desktop installed and running.
+   - The repository already includes `scripts/azure/deploy-azure.ps1` which will provision an Azure Resource Group, Cosmos DB (MongoDB), an Azure Container Registry (ACR), build and push the Docker image, create an App Service for Containers, and configure app settings.
+   - To run locally (PowerShell):
+
+```powershell
+# From the repository root
+\.\scripts\azure\deploy-azure.ps1
+```
+
+   - The script will prompt for required secrets like the Telegram Bot Token and will output the created resource names and web app URL.
+
+2) Use GitHub Actions (CI/CD)
+
+   - There's a workflow at `.github/workflows/azure-deploy.yml` that will build the Docker image, push it to ACR, and update the Azure Web App to use the new image on each push to `main`.
+   - Required GitHub repository secrets:
+     - `AZURE_CREDENTIALS` — service principal JSON (create with `az ad sp create-for-rbac --name "github-action-sp" --role contributor --scopes /subscriptions/<SUB_ID> --sdk-auth`)
+     - `ACR_NAME` — the name of your Azure Container Registry
+     - `AZURE_RESOURCE_GROUP` — resource group name containing the Web App
+     - `AZURE_WEBAPP_NAME` — name of the App Service (Web App)
+
+   - The workflow will use the service principal to log in, push the built image into the ACR, then configure the Web App container to point to the new image.
+
+Notes
+- If you prefer to deploy without creating the cloud resources automatically, create an ACR and Web App manually in the Azure Portal, then run the PowerShell script with steps adjusted to skip resource creation (or manually push the image and set the Web App container image).
+- The Dockerfile at the repo root listens on port 8000 and runs Gunicorn. Ensure the Web App's container settings expose the correct port (App Service for Containers maps container ports automatically when configured via image).
+
+
 ## Customization
 
 ### Certificate Template

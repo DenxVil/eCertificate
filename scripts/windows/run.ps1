@@ -27,14 +27,16 @@ if (Test-Path ".env") {
         if ($_ -match '^\s*([^#][^=]*)\s*=\s*(.*)$') {
             $key = $matches[1].Trim()
             $value = $matches[2].Trim()
-            # Remove quotes if present
-            $value = $value -replace '^["'']|["'']$', ''
+            # Remove quotes if present, but handle empty values
+            if ($value -match '^["'']' -and $value -match '["'']$') {
+                $value = $value.Substring(1, $value.Length - 2)
+            }
             [Environment]::SetEnvironmentVariable($key, $value, "Process")
         }
     }
-    Write-Host "✓ Environment variables loaded from .env" -ForegroundColor Green
+    Write-Host "[OK] Environment variables loaded from .env" -ForegroundColor Green
 } else {
-    Write-Host "⚠ .env file not found, using defaults" -ForegroundColor Yellow
+    Write-Host "[WARN] .env file not found, using defaults" -ForegroundColor Yellow
     Write-Host "  Run setup to create .env: .\scripts\windows\setup.ps1" -ForegroundColor Yellow
 }
 
@@ -42,10 +44,10 @@ if (Test-Path ".env") {
 Write-Host ""
 Write-Host "[2/4] Checking entrypoint..." -ForegroundColor Yellow
 if (-not (Test-Path $Entrypoint)) {
-    Write-Host "✗ Entrypoint not found: $Entrypoint" -ForegroundColor Red
+    Write-Host "[FAIL] Entrypoint not found: $Entrypoint" -ForegroundColor Red
     exit 1
 }
-Write-Host "✓ Entrypoint found: $Entrypoint" -ForegroundColor Green
+Write-Host "[OK] Entrypoint found: $Entrypoint" -ForegroundColor Green
 
 # Check framework dependencies
 Write-Host ""

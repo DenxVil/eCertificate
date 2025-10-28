@@ -1,7 +1,8 @@
 """Event management routes."""
 from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, flash
-from app.models import db, Event
+from app.models.mongo_models import Event
 from app.utils import allowed_file, save_uploaded_file
+from bson.objectid import ObjectId
 import os
 
 events_bp = Blueprint('events', __name__)
@@ -10,7 +11,7 @@ events_bp = Blueprint('events', __name__)
 @events_bp.route('/')
 def list_events():
     """List all events."""
-    events = Event.query.order_by(Event.created_at.desc()).all()
+    events = Event.find_all()
     return render_template('events/list.html', events=events)
 
 
@@ -34,14 +35,11 @@ def create_event():
                 template_path = save_uploaded_file(template_file, current_app.config['UPLOAD_FOLDER'])
         
         # Create event
-        event = Event(
+        Event.create(
             name=name,
             description=description,
             template_path=template_path
         )
-        
-        db.session.add(event)
-        db.session.commit()
         
         flash('Event created successfully!', 'success')
         return redirect(url_for('events.list_events'))
@@ -49,51 +47,60 @@ def create_event():
     return render_template('events/create.html')
 
 
-@events_bp.route('/<int:event_id>')
+@events_bp.route('/<event_id>')
 def view_event(event_id):
     """View event details."""
-    event = Event.query.get_or_404(event_id)
+    event = Event.find_by_id(event_id)
+    if not event:
+        flash('Event not found', 'error')
+        return redirect(url_for('events.list_events'))
     return render_template('events/view.html', event=event)
 
 
-@events_bp.route('/<int:event_id>/edit', methods=['GET', 'POST'])
+@events_bp.route('/<event_id>/edit', methods=['GET', 'POST'])
 def edit_event(event_id):
     """Edit an event."""
-    event = Event.query.get_or_404(event_id)
+    event = Event.find_by_id(event_id)
+    if not event:
+        flash('Event not found', 'error')
+        return redirect(url_for('events.list_events'))
     
     if request.method == 'POST':
-        event.name = request.form.get('name', event.name)
-        event.description = request.form.get('description', event.description)
-        
+        name = request.form.get('name', event['name'])
+        description = request.form.get('description', event['description'])
+        template_path = event['template_path']
+
         # Handle template upload
         if 'template' in request.files:
             template_file = request.files['template']
             if template_file and template_file.filename and \
                allowed_file(template_file.filename, current_app.config['ALLOWED_EXTENSIONS']):
                 # Delete old template if exists
-                if event.template_path and os.path.exists(event.template_path):
-                    os.remove(event.template_path)
+                if template_path and os.path.exists(template_path):
+                    os.remove(template_path)
                 
-                event.template_path = save_uploaded_file(template_file, current_app.config['UPLOAD_FOLDER'])
+                template_path = save_uploaded_file(template_file, current_app.config['UPLOAD_FOLDER'])
         
-        db.session.commit()
+        Event.update(event_id, name, description, template_path)
         flash('Event updated successfully!', 'success')
-        return redirect(url_for('events.view_event', event_id=event.id))
+        return redirect(url_for('events.view_event', event_id=event_id))
     
     return render_template('events/edit.html', event=event)
 
 
-@events_bp.route('/<int:event_id>/delete', methods=['POST'])
+@events_bp.route('/<event_id>/delete', methods=['POST'])
 def delete_event(event_id):
     """Delete an event."""
-    event = Event.query.get_or_404(event_id)
+    event = Event.find_by_id(event_id)
+    if not event:
+        flash('Event not found', 'error')
+        return redirect(url_for('events.list_events'))
     
     # Delete template file if exists
-    if event.template_path and os.path.exists(event.template_path):
-        os.remove(event.template_path)
+    if event.get('template_path') and os.path.exists(event['template_path']):
+        os.remove(event['template_path'])
     
-    db.session.delete(event)
-    db.session.commit()
+    Event.delete(event_id)
     
     flash('Event deleted successfully!', 'success')
     return redirect(url_for('events.list_events'))

@@ -1,88 +1,109 @@
 """Job management routes."""
 from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, flash
-from app.models import db, Event, Job, Participant
+from app import mongo
+from app.models.mongo_models import Event, Job, Participant
 from app.utils import parse_csv_file, parse_excel_file, save_uploaded_file
 from app.utils.certificate_generator import CertificateGenerator
 from app.utils.email_sender import send_certificate_email
 from datetime import datetime
+from bson.objectid import ObjectId
 import os
 import threading
+import json
 
 jobs_bp = Blueprint('jobs', __name__)
 
 
-def process_job(app, job_id):
-    """Process a certificate generation job in background.
-    
-    Args:
-        app: Flask application instance
-        job_id: ID of the job to process
-    """
+def process_job(app, job_id, customization_json=None):
+    """Process a certificate generation job in background."""
     with app.app_context():
-        job = Job.query.get(job_id)
+        job = Job.find_by_id(job_id)
         if not job:
             return
-        
+
+        import traceback as _tb
         try:
-            # Update job status
-            job.status = 'processing'
-            db.session.commit()
+            Job.update_status(job_id, 'processing')
             
-            # Get event and participants
-            event = Event.query.get(job.event_id)
-            participants = Participant.query.filter_by(job_id=job.id).all()
+            event = Event.find_by_id(job['event_id'])
+            participants = Participant.find_by_job(job_id)
             
-            if not event.template_path or not os.path.exists(event.template_path):
+            tpl = event.get('template_path')
+            if not tpl:
                 raise ValueError("Event template not found")
-            
-            # Initialize certificate generator
+
+            upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
+            if os.path.isabs(tpl):
+                template_full_path = tpl
+            elif tpl.startswith(upload_folder + os.sep) or tpl.startswith(upload_folder + '/'):
+                template_full_path = tpl
+            else:
+                template_full_path = os.path.join(app.config['UPLOAD_FOLDER'], tpl)
+
+            if not os.path.exists(template_full_path):
+                raise ValueError(f"Event template file not found at path: {template_full_path}")
+                
             generator = CertificateGenerator(
-                template_path=event.template_path,
+                template_path=template_full_path,
                 output_folder=current_app.config['OUTPUT_FOLDER']
             )
             
-            # Generate and send certificates
+            customization = json.loads(customization_json) if customization_json else None
+
             for participant in participants:
                 try:
-                    # Generate certificate
-                    cert_path = generator.generate_certificate(
-                        participant_name=participant.name,
-                        event_name=event.name
-                    )
+                    if customization:
+                        fields = []
+                        for field in customization:
+                            text = field['text']
+                            if text == 'participant_name':
+                                text = participant['name']
+                            elif text == 'event_name':
+                                text = event['name']
+                            elif text == 'date':
+                                text = datetime.now().strftime("%B %d, %Y")
+                            fields.append({**field, 'text': text})
+                        cert_path = generator.generate(fields)
+                    else:
+                        cert_path = generator.generate_certificate(
+                            participant_name=participant['name'],
+                            event_name=event['name']
+                        )
                     
-                    participant.certificate_path = cert_path
+                    cert_filename = os.path.basename(cert_path)
                     
-                    # Send email
                     email_sent = send_certificate_email(
-                        recipient_email=participant.email,
-                        recipient_name=participant.name,
-                        event_name=event.name,
+                        recipient_email=participant['email'],
+                        recipient_name=participant['name'],
+                        event_name=event['name'],
                         certificate_path=cert_path
                     )
                     
-                    participant.email_sent = email_sent
-                    job.generated_certificates += 1
-                    db.session.commit()
+                    Participant.update_certificate(participant['_id'], cert_filename, email_sent)
+                    Job.increment_generated(job_id)
                     
                 except Exception as e:
-                    print(f"Error processing participant {participant.name}: {str(e)}")
+                    tb = _tb.format_exc()
+                    print(f"Error processing participant {participant.get('name')}: {str(e)}\n{tb}")
             
-            # Update job status
-            job.status = 'completed'
-            job.completed_at = datetime.utcnow()
-            db.session.commit()
-            
+            Job.update_status(job_id, 'completed')
+
         except Exception as e:
-            job.status = 'failed'
-            job.error_message = str(e)
-            db.session.commit()
+            tb = _tb.format_exc()
+            Job.update_status(job_id, 'failed', error_message=f"{str(e)}\n{tb}")
+            print(f"Job {job_id} failed: {str(e)}\n{tb}")
 
 
 @jobs_bp.route('/')
 def list_jobs():
     """List all jobs."""
-    jobs = Job.query.order_by(Job.created_at.desc()).all()
-    return render_template('jobs/list.html', jobs=jobs)
+    jobs_cursor = mongo.db.jobs.find().sort('created_at', -1)
+    jobs_list = []
+    for job in jobs_cursor:
+        event = Event.find_by_id(job['event_id'])
+        job['event_name'] = event['name'] if event else 'Unknown Event'
+        jobs_list.append(job)
+    return render_template('jobs/list.html', jobs=jobs_list)
 
 
 @jobs_bp.route('/create', methods=['GET', 'POST'])
@@ -90,104 +111,110 @@ def create_job():
     """Create a new certificate generation job."""
     if request.method == 'POST':
         event_id = request.form.get('event_id')
-        
         if not event_id:
-            flash('Please select an event', 'error')
+            flash('Please select an event.', 'error')
             return redirect(url_for('jobs.create_job'))
-        
-        event = Event.query.get(event_id)
-        if not event:
-            flash('Event not found', 'error')
-            return redirect(url_for('jobs.create_job'))
-        
-        # Create job
-        job = Job(event_id=event_id)
-        db.session.add(job)
-        db.session.commit()
-        
-        # Handle participant data
-        participants = []
-        
-        # Single participant entry
-        if request.form.get('single_name') and request.form.get('single_email'):
-            participants.append({
-                'name': request.form.get('single_name'),
-                'email': request.form.get('single_email')
-            })
-        
-        # Bulk upload
-        if 'participants_file' in request.files:
-            file = request.files['participants_file']
-            if file and file.filename:
-                filepath = save_uploaded_file(file, current_app.config['UPLOAD_FOLDER'])
-                
-                try:
-                    if file.filename.endswith('.csv'):
-                        participants.extend(parse_csv_file(filepath))
-                    elif file.filename.endswith(('.xlsx', '.xls')):
-                        participants.extend(parse_excel_file(filepath))
-                    
-                    # Clean up uploaded file
-                    os.remove(filepath)
-                    
-                except Exception as e:
-                    flash(f'Error parsing file: {str(e)}', 'error')
-                    db.session.delete(job)
-                    db.session.commit()
-                    return redirect(url_for('jobs.create_job'))
-        
-        if not participants:
-            flash('Please provide at least one participant', 'error')
-            db.session.delete(job)
-            db.session.commit()
-            return redirect(url_for('jobs.create_job'))
-        
-        # Add participants to job
-        for p_data in participants:
-            participant = Participant(
-                job_id=job.id,
-                name=p_data['name'],
-                email=p_data['email']
+
+        if 'participant_file' not in request.files:
+            flash('No participant file provided.', 'error')
+            return redirect(request.url)
+            
+        file = request.files['participant_file']
+        if file.filename == '':
+            flash('No selected file.', 'error')
+            return redirect(request.url)
+
+        try:
+            if file.filename.endswith('.csv'):
+                participants_data = parse_csv_file(file)
+            elif file.filename.endswith(('.xls', '.xlsx')):
+                participants_data = parse_excel_file(file)
+            else:
+                flash('Invalid file type. Please upload CSV or Excel.', 'error')
+                return redirect(request.url)
+
+            if not participants_data:
+                flash('No participants found in the file.', 'error')
+                return redirect(request.url)
+
+            job_id = Job.create(event_id)
+            
+            participants_to_insert = [
+                {"job_id": ObjectId(job_id), "name": p['name'], "email": p['email'], "created_at": datetime.utcnow()}
+                for p in participants_data
+            ]
+            if participants_to_insert:
+                Participant.create_many(participants_to_insert)
+            
+            Job.set_total(job_id, len(participants_to_insert))
+
+            customization_json = request.form.get('customization_json')
+
+            thread = threading.Thread(
+                target=process_job,
+                args=(current_app._get_current_object(), job_id, customization_json)
             )
-            db.session.add(participant)
-        
-        job.total_certificates = len(participants)
-        db.session.commit()
-        
-        # Start background processing
-        thread = threading.Thread(
-            target=process_job,
-            args=(current_app._get_current_object(), job.id)
-        )
-        thread.daemon = True
-        thread.start()
-        
-        flash(f'Job created successfully! Processing {len(participants)} certificates.', 'success')
-        return redirect(url_for('jobs.view_job', job_id=job.id))
-    
-    # GET request - show form
-    events = Event.query.all()
+            thread.daemon = True
+            thread.start()
+
+            flash('Job created successfully! Certificates are being generated.', 'success')
+            return redirect(url_for('jobs.view_job', job_id=job_id))
+
+        except Exception as e:
+            flash(f'Error processing file: {e}', 'error')
+            return redirect(request.url)
+
+    events = Event.find_all()
     return render_template('jobs/create.html', events=events)
 
 
-@jobs_bp.route('/<int:job_id>')
+@jobs_bp.route('/<job_id>')
 def view_job(job_id):
-    """View job details."""
-    job = Job.query.get_or_404(job_id)
-    participants = Participant.query.filter_by(job_id=job.id).all()
+    """View job details and participants."""
+    job = Job.find_by_id(job_id)
+    if not job:
+        flash('Job not found.', 'error')
+        return redirect(url_for('jobs.list_jobs'))
+        
+    event = Event.find_by_id(job['event_id'])
+    participants = Participant.find_by_job(job_id)
+    
+    job['event_name'] = event['name'] if event else 'Unknown'
+    
     return render_template('jobs/view.html', job=job, participants=participants)
 
 
-# API endpoints
-@jobs_bp.route('/api/<int:job_id>', methods=['GET'])
-def api_get_job(job_id):
-    """API endpoint to get job status."""
-    job = Job.query.get_or_404(job_id)
-    return jsonify(job.to_dict())
+@jobs_bp.route('/<job_id>/status')
+def job_status(job_id):
+    """Return job status as JSON."""
+    job = Job.find_by_id(job_id)
+    if not job:
+        return jsonify({'error': 'Job not found'}), 404
+    
+    return jsonify({
+        'status': job.get('status'),
+        'total': job.get('total_certificates'),
+        'generated': job.get('generated_certificates'),
+        'error': job.get('error_message')
+    })
 
 
-@jobs_bp.route('/api', methods=['GET'])
-def api_list_jobs():
-    """API endpoint to list all jobs."""
-    jobs = Job.query.all()
-    return jsonify([job.to_dict() for job in jobs])
+@jobs_bp.route('/<job_id>/reprocess', methods=['POST'])
+def reprocess_job(job_id):
+    """Reprocess a failed or completed job."""
+    job = Job.find_by_id(job_id)
+    if not job:
+        flash('Job not found.', 'error')
+        return redirect(url_for('jobs.list_jobs'))
+
+    Job.update_status(job_id, 'pending')
+    
+    thread = threading.Thread(
+        target=process_job,
+        args=(current_app._get_current_object(), job_id, None)
+    )
+    thread.daemon = True
+    thread.start()
+
+    flash(f'Job {job_id} has been queued for reprocessing.', 'info')
+    return redirect(url_for('jobs.view_job', job_id=job_id))

@@ -5,22 +5,15 @@ import os
 mail = Mail()
 
 
-def send_certificate_email(recipient_email, recipient_name, event_name, certificate_path):
-    """Send certificate via email.
-    
-    Args:
-        recipient_email: Email address of the recipient
-        recipient_name: Name of the recipient
-        event_name: Name of the event
-        certificate_path: Path to the certificate file
-        
-    Returns:
-        True if email sent successfully, False otherwise
+def send_certificate_email(recipient_email, recipient_name, event_name, certificate_path, retries=3):
+    """Send certificate via email with retries.
+
+    Returns True if sent, False otherwise. Retries a few times on transient errors.
     """
-    try:
-        subject = f"Certificate of Participation - {event_name}"
-        
-        body = f"""
+    import time
+    subject = f"Certificate of Participation - {event_name}"
+
+    body = f"""
 Dear {recipient_name},
 
 Congratulations! We are pleased to present you with your Certificate of Participation for {event_name}.
@@ -31,29 +24,36 @@ Thank you for your participation!
 
 Best regards,
 Denx Certificate Generator Team
-        """
-        
-        msg = Message(
-            subject=subject,
-            recipients=[recipient_email],
-            body=body
-        )
-        
-        # Attach certificate
-        if os.path.exists(certificate_path):
-            with open(certificate_path, 'rb') as cert_file:
-                msg.attach(
-                    filename=os.path.basename(certificate_path),
-                    content_type='image/png',
-                    data=cert_file.read()
-                )
-        
-        mail.send(msg)
-        return True
-        
-    except Exception as e:
-        print(f"Error sending email to {recipient_email}: {str(e)}")
-        return False
+    """
+
+    for attempt in range(1, retries + 1):
+        try:
+            msg = Message(
+                subject=subject,
+                recipients=[recipient_email],
+                body=body
+            )
+
+            # Attach certificate
+            if os.path.exists(certificate_path):
+                with open(certificate_path, 'rb') as cert_file:
+                    msg.attach(
+                        filename=os.path.basename(certificate_path),
+                        content_type='image/png',
+                        data=cert_file.read()
+                    )
+
+            mail.send(msg)
+            return True
+
+        except Exception as e:
+            # Print error and retry for transient issues
+            print(f"Attempt {attempt} - Error sending email to {recipient_email}: {str(e)}")
+            if attempt < retries:
+                # exponential backoff
+                time.sleep(2 ** attempt)
+            else:
+                return False
 
 
 def send_bulk_notification(admin_email, job_id, total_sent, total_failed):

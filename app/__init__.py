@@ -1,10 +1,11 @@
 """Main Flask application initialization."""
 from flask import Flask
+from flask_pymongo import PyMongo
 from config import config
-from app.models import db
 from app.utils.email_sender import mail
 import os
 
+mongo = PyMongo()
 
 def create_app(config_name='default'):
     """Create and configure the Flask application.
@@ -21,12 +22,8 @@ def create_app(config_name='default'):
     app.config.from_object(config[config_name])
     
     # Initialize extensions
-    db.init_app(app)
+    mongo.init_app(app)
     mail.init_app(app)
-    
-    # Create database tables
-    with app.app_context():
-        db.create_all()
     
     # Create necessary directories
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
