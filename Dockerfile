@@ -18,7 +18,7 @@ COPY . .
 EXPOSE 8000
 
 # Define environment variable
-ENV FLASK_APP app.py
+ENV FLASK_APP=app.py
 
 # Run the application using Gunicorn
 # Gunicorn is a production-ready WSGI server
