@@ -4,6 +4,7 @@ Flask-Mail
 python-dotenv
 Pillow
 pandas
+openpyxl
 python-telegram-bot
 gunicorn
 dnspython
