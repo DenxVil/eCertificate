@@ -7,3 +7,6 @@ pandas
 python-telegram-bot
 gunicorn
 dnspython
+reportlab
+qrcode
+python-qrcode[pil]

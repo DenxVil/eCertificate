@@ -1,0 +1,76 @@
+{
+  "name": "Professional Certificate Template",
+  "description": "A modern, professional certificate of achievement template with customizable fields",
+  "background_image": null,
+  "width": 11.0,
+  "height": 8.5,
+  "margins": [0.5, 0.5, 0.5, 0.5],
+  "elements": [
+    {
+      "text": "Certificate of Achievement",
+      "x": 5.5,
+      "y": 1.2,
+      "font_name": "Helvetica",
+      "font_size": 54,
+      "color": "#1a5490",
+      "alignment": "center",
+      "bold": true
+    },
+    {
+      "text": "This prestigious certificate is proudly presented to",
+      "x": 5.5,
+      "y": 2.8,
+      "font_name": "Helvetica",
+      "font_size": 16,
+      "color": "#333333",
+      "alignment": "center"
+    },
+    {
+      "text": "{{participant_name}}",
+      "x": 5.5,
+      "y": 3.6,
+      "font_name": "Helvetica",
+      "font_size": 42,
+      "color": "#1a5490",
+      "alignment": "center",
+      "bold": true
+    },
+    {
+      "text": "In recognition of outstanding achievement and participation in",
+      "x": 5.5,
+      "y": 4.5,
+      "font_name": "Helvetica",
+      "font_size": 14,
+      "color": "#333333",
+      "alignment": "center"
+    },
+    {
+      "text": "{{event_name}}",
+      "x": 5.5,
+      "y": 5.1,
+      "font_name": "Helvetica",
+      "font_size": 32,
+      "color": "#1a5490",
+      "alignment": "center",
+      "bold": true
+    },
+    {
+      "text": "Awarded on {{date}}",
+      "x": 5.5,
+      "y": 6.2,
+      "font_name": "Helvetica",
+      "font_size": 14,
+      "color": "#555555",
+      "alignment": "center"
+    },
+    {
+      "text": "Certificate ID: {{certificate_id}}",
+      "x": 5.5,
+      "y": 7.8,
+      "font_name": "Courier",
+      "font_size": 9,
+      "color": "#999999",
+      "alignment": "center"
+    }
+  ]
+}
