@@ -10,15 +10,22 @@ from bson.objectid import ObjectId
 import os
 import threading
 import json
+import logging
 
 jobs_bp = Blueprint('jobs', __name__)
+logger = logging.getLogger(__name__)
 
 
 def process_job(app, job_id, customization_json=None):
     """Process a certificate generation job in background."""
     with app.app_context():
-        job = Job.find_by_id(job_id)
-        if not job:
+        try:
+            job = Job.find_by_id(job_id)
+            if not job:
+                logger.error(f"Job {job_id} not found")
+                return
+        except Exception as e:
+            logger.error(f"Error retrieving job {job_id}: {e}")
             return
 
         import traceback as _tb
@@ -26,6 +33,9 @@ def process_job(app, job_id, customization_json=None):
             Job.update_status(job_id, 'processing')
             
             event = Event.find_by_id(job['event_id'])
+            if not event:
+                raise ValueError("Event not found")
+            
             participants = Participant.find_by_job(job_id)
             
             tpl = event.get('template_path')

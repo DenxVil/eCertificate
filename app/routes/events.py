@@ -4,45 +4,63 @@ from app.models.mongo_models import Event
 from app.utils import allowed_file, save_uploaded_file
 from bson.objectid import ObjectId
 import os
+import logging
 
 events_bp = Blueprint('events', __name__)
+logger = logging.getLogger(__name__)
 
 
 @events_bp.route('/')
 def list_events():
     """List all events."""
-    events = Event.find_all()
-    return render_template('events/list.html', events=events)
+    try:
+        events = Event.find_all()
+        return render_template('events/list.html', events=events)
+    except RuntimeError as e:
+        flash(str(e), 'error')
+        return render_template('events/list.html', events=[])
+    except Exception as e:
+        logger.error(f"Error listing events: {e}")
+        flash('An error occurred while loading events', 'error')
+        return render_template('events/list.html', events=[])
 
 
 @events_bp.route('/create', methods=['GET', 'POST'])
 def create_event():
     """Create a new event."""
     if request.method == 'POST':
-        name = request.form.get('name')
-        description = request.form.get('description')
-        
-        if not name:
-            flash('Event name is required', 'error')
+        try:
+            name = request.form.get('name')
+            description = request.form.get('description')
+            
+            if not name:
+                flash('Event name is required', 'error')
+                return redirect(url_for('events.create_event'))
+            
+            # Handle template upload
+            template_path = None
+            if 'template' in request.files:
+                template_file = request.files['template']
+                if template_file and template_file.filename and \
+                   allowed_file(template_file.filename, current_app.config['ALLOWED_EXTENSIONS']):
+                    template_path = save_uploaded_file(template_file, current_app.config['UPLOAD_FOLDER'])
+            
+            # Create event
+            Event.create(
+                name=name,
+                description=description,
+                template_path=template_path
+            )
+            
+            flash('Event created successfully!', 'success')
+            return redirect(url_for('events.list_events'))
+        except RuntimeError as e:
+            flash(str(e), 'error')
             return redirect(url_for('events.create_event'))
-        
-        # Handle template upload
-        template_path = None
-        if 'template' in request.files:
-            template_file = request.files['template']
-            if template_file and template_file.filename and \
-               allowed_file(template_file.filename, current_app.config['ALLOWED_EXTENSIONS']):
-                template_path = save_uploaded_file(template_file, current_app.config['UPLOAD_FOLDER'])
-        
-        # Create event
-        Event.create(
-            name=name,
-            description=description,
-            template_path=template_path
-        )
-        
-        flash('Event created successfully!', 'success')
-        return redirect(url_for('events.list_events'))
+        except Exception as e:
+            logger.error(f"Error creating event: {e}")
+            flash('An error occurred while creating the event', 'error')
+            return redirect(url_for('events.create_event'))
     
     return render_template('events/create.html')
 
@@ -50,11 +68,19 @@ def create_event():
 @events_bp.route('/<event_id>')
 def view_event(event_id):
     """View event details."""
-    event = Event.find_by_id(event_id)
-    if not event:
-        flash('Event not found', 'error')
+    try:
+        event = Event.find_by_id(event_id)
+        if not event:
+            flash('Event not found', 'error')
+            return redirect(url_for('events.list_events'))
+        return render_template('events/view.html', event=event)
+    except RuntimeError as e:
+        flash(str(e), 'error')
         return redirect(url_for('events.list_events'))
-    return render_template('events/view.html', event=event)
+    except Exception as e:
+        logger.error(f"Error viewing event: {e}")
+        flash('An error occurred while loading the event', 'error')
+        return redirect(url_for('events.list_events'))
 
 
 @events_bp.route('/<event_id>/edit', methods=['GET', 'POST'])
