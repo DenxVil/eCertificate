@@ -139,3 +139,7 @@ AzureCLI.zip
 # Temporary files
 *.tmp
 *.temp
+
+# Test files
+uploads/test_certificate_template.png
+generated_certificates/
