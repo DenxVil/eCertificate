@@ -1,24 +1,30 @@
 # 🎓 Goonj Certificate Generator
 
-A powerful web application for generating and distributing digital certificates with AI-powered field detection, email delivery and Telegram bot integration.
+A streamlined web application for generating and distributing digital certificates with AI-powered field detection, email delivery and Telegram bot integration.
 
-## Features
+## Core Features
 
-- ✨ **NEW: Smart Certificate Generator**: Upload templates, AI detects fields automatically, perfect alignment guaranteed
-- ✨ **AI-Powered Field Detection**: Automatically scan and identify text fields in certificate templates
-- ✅ **Custom Certificate Templates**: Upload your own certificate designs (PNG, JPG, PDF)
-- ✅ **Event Management**: Create and manage multiple events with different templates
-- ✅ **Bulk Processing**: Upload participant lists via CSV or Excel files
-- ✅ **Automated Generation**: Certificates are generated automatically with participant names
-- ✅ **Email Delivery**: Certificates are sent directly to participants via email
-- ✅ **Telegram Bot**: Control the system through an integrated Telegram bot
-- ✅ **Job Tracking**: Monitor certificate generation jobs in real-time
-- ✅ **Web Interface**: User-friendly web interface for all operations
+The application provides **two primary features**:
+
+1. **🎯 Smart Certificate Generator** (Web Interface)
+   - Upload certificate templates (PNG, JPG, PDF)
+   - AI automatically detects and identifies text fields
+   - Enter custom values for each field
+   - Generate perfectly aligned certificates instantly
+   - Download certificates individually
+
+2. **📱 Bulk Certificate Generation** (Telegram Bot)
+   - Create events with certificate templates
+   - Upload participant lists via CSV/Excel
+   - Automated certificate generation for all participants
+   - Automatic email delivery to participants
+   - Real-time job progress tracking
 
 ## Technology Stack
 
 - **Backend**: Flask (Python 3.8+)
-- **Database**: SQLAlchemy with SQLite
+- **Database**: MongoDB (PyMongo) - supports Azure Cosmos DB
+- **AI/OCR**: Tesseract OCR, OpenCV for template field detection
 - **Certificate Generation**: Pillow (PIL)
 - **Email**: Flask-Mail (SMTP)
 - **Bot**: python-telegram-bot
@@ -312,15 +318,35 @@ The application provides REST API endpoints:
 
 ## Security Considerations
 
-- **IMPORTANT**: Set `FLASK_ENV=production` and `FLASK_DEBUG=False` in your `.env` file when deploying to production
-- Change the `SECRET_KEY` in production to a strong random value
-- Use HTTPS in production
-- Keep your `.env` file secure and never commit it
-- Use app passwords for email services
-- Regularly update dependencies
-- Implement rate limiting for production use
-- Add authentication for the web interface in production
-- Never run Flask with debug mode enabled in production environments
+**🔒 Security is a top priority.** See [SECURITY.md](SECURITY.md) for comprehensive security guidelines.
+
+### Quick Security Checklist
+
+- **IMPORTANT**: Set `FLASK_ENV=production` and `FLASK_DEBUG=False` when deploying to production
+- Change the `SECRET_KEY` to a strong random value (never use the default)
+- Use HTTPS/TLS in production
+- Keep your `.env` file secure and never commit it to version control
+- Use app-specific passwords for email services
+- Regularly update dependencies (`pip install --upgrade -r requirements.txt`)
+- All credentials stored in environment variables (no hardcoded secrets)
+- Database connections use SSL/TLS encryption
+- File uploads are validated and size-limited
+
+### Azure & Telegram Monitoring
+
+- The application integrates with Telegram for bot-based certificate generation
+- Azure monitoring is available via `@NexusAiProbot` on Telegram for authorized users
+- All access tokens and credentials are stored securely in environment variables
+- See [SECURITY.md](SECURITY.md) for detailed information
+
+### Performance Optimizations
+
+This version includes several performance improvements:
+- Database query optimization with indexing
+- Batch loading to eliminate N+1 query problems
+- Template caching for certificate generation
+- File size validation to prevent memory issues
+- Efficient error handling and logging
 
 ## Contributing
 

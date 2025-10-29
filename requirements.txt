@@ -8,8 +8,6 @@ openpyxl
 python-telegram-bot
 gunicorn
 dnspython
-reportlab
-qrcode
 pytesseract
 pdf2image
 opencv-python

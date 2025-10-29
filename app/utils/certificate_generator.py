@@ -1,11 +1,32 @@
-"""Certificate generator utility using Pillow."""
+"""Certificate generator utility using Pillow.
+
+This module provides functionality for generating certificates by placing text
+on certificate templates. It supports custom positioning, fonts, and alignment.
+
+Performance Optimizations:
+- Template is loaded once during initialization and reused
+- Fonts are cached to avoid repeated loading
+- Image operations use efficient PIL methods
+"""
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from datetime import datetime
-# & .\.venv\Scripts\Activate.ps1; python app.py
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class CertificateGenerator:
-    """Generate certificates by placing text on templates."""
+    """Generate certificates by placing text on templates.
+    
+    This class handles loading certificate templates and generating
+    personalized certificates with participant information.
+    
+    Attributes:
+        template_path (str): Path to the template image file
+        output_folder (str): Directory for saving generated certificates
+        template (PIL.Image): Loaded template image
+    """
     
     def __init__(self, template_path, output_folder='generated_certificates'):
         """Initialize the certificate generator.
@@ -13,15 +34,27 @@ class CertificateGenerator:
         Args:
             template_path: Path to the certificate template image
             output_folder: Folder to save generated certificates
+            
+        Raises:
+            FileNotFoundError: If template file does not exist
+            IOError: If template file cannot be loaded
         """
+        if not os.path.exists(template_path):
+            raise FileNotFoundError(f"Template file not found: {template_path}")
+            
         self.template_path = template_path
         self.output_folder = output_folder
         
         # Create output folder if it doesn't exist
         os.makedirs(output_folder, exist_ok=True)
         
-        # Load template
-        self.template = Image.open(template_path).convert("RGBA")
+        try:
+            # Load template once for reuse (performance optimization)
+            self.template = Image.open(template_path).convert("RGBA")
+            logger.info(f"Template loaded successfully: {template_path}")
+        except Exception as e:
+            logger.error(f"Failed to load template: {e}")
+            raise IOError(f"Cannot load template file: {template_path}") from e
         
         # Default positions (can be customized)
         self.name_position = (self.template.width // 2, self.template.height // 2 - 50)
@@ -36,47 +69,73 @@ class CertificateGenerator:
         self._load_fonts()
 
     def _load_fonts(self):
-        """Load fonts for text rendering."""
+        """Load fonts for text rendering with fallback support."""
         try:
             # Try to load a nice font
             self.name_font = ImageFont.truetype("arial.ttf", self.name_font_size)
             self.event_font = ImageFont.truetype("arial.ttf", self.event_font_size)
             self.date_font = ImageFont.truetype("arial.ttf", self.date_font_size)
+            logger.info("Fonts loaded successfully")
         except OSError:
             # Fallback to default font
             self.name_font = ImageFont.load_default()
             self.event_font = ImageFont.load_default()
             self.date_font = ImageFont.load_default()
+            logger.warning("Using default font (TrueType fonts not found)")
 
     def _get_font(self, font_name, size):
-        """Load a font, falling back to default if not found."""
+        """Load a font, falling back to default if not found.
+        
+        Args:
+            font_name: Name of the font file
+            size: Font size in points
+            
+        Returns:
+            PIL.ImageFont: Loaded font object
+        """
         try:
             return ImageFont.truetype(font_name, size)
         except OSError:
+            logger.warning(f"Font {font_name} not found, using default")
             return ImageFont.load_default()
 
     def _get_text_color(self, image, region):
-        """Analyze a region of the image to determine a contrasting text color."""
+        """Analyze a region of the image to determine a contrasting text color.
+        
+        Args:
+            image: PIL Image object
+            region: Tuple of (x1, y1, x2, y2) coordinates
+            
+        Returns:
+            str: "black" or "white" depending on background brightness
+        """
         try:
             box = image.crop(region)
             # Convert to grayscale and get average brightness
             avg_brightness = box.convert("L").resize((1, 1)).getpixel((0, 0))
             return "black" if avg_brightness > 128 else "white"
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Error determining text color: {e}")
             return "black"  # Default to black on error
 
     def generate(self, fields, output_filename=None):
-        """
-        Generate a certificate with dynamically placed and styled text.
+        """Generate a certificate with dynamically placed and styled text.
 
         Args:
             fields (list): A list of dictionaries, each representing a text field.
-                           Each dict should have: 'text', 'x', 'y', 'font_name', 'font_size', 'align'.
+                          Each dict should have: 'text', 'x', 'y', 'font_name', 
+                          'font_size', 'align'.
             output_filename (str, optional): Custom output filename.
 
         Returns:
             str: Path to the generated certificate.
+            
+        Raises:
+            ValueError: If fields parameter is invalid
         """
+        if not fields or not isinstance(fields, list):
+            raise ValueError("Fields must be a non-empty list")
+            
         certificate = self.template.copy()
         draw = ImageDraw.Draw(certificate)
 

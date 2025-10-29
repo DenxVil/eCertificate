@@ -106,14 +106,37 @@ def process_job(app, job_id, customization_json=None):
 
 @jobs_bp.route('/')
 def list_jobs():
-    """List all jobs."""
-    jobs_cursor = mongo.db.jobs.find().sort('created_at', -1)
-    jobs_list = []
-    for job in jobs_cursor:
-        event = Event.find_by_id(job['event_id'])
-        job['event_name'] = event['name'] if event else 'Unknown Event'
-        jobs_list.append(job)
-    return render_template('jobs/list.html', jobs=jobs_list)
+    """List all jobs with optimized queries."""
+    try:
+        # Fetch all jobs with sorting
+        jobs_cursor = mongo.db.jobs.find().sort('created_at', -1)
+        jobs_list = []
+        
+        # Collect unique event IDs
+        event_ids = set()
+        jobs_data = []
+        for job in jobs_cursor:
+            jobs_data.append(job)
+            event_ids.add(job['event_id'])
+        
+        # Fetch all events in one query
+        events_dict = {}
+        if event_ids:
+            events = mongo.db.events.find({'_id': {'$in': list(event_ids)}})
+            for event in events:
+                events_dict[event['_id']] = event
+        
+        # Combine data
+        for job in jobs_data:
+            event = events_dict.get(job['event_id'])
+            job['event_name'] = event['name'] if event else 'Unknown Event'
+            jobs_list.append(job)
+        
+        return render_template('jobs/list.html', jobs=jobs_list)
+    except Exception as e:
+        logger.error(f"Error listing jobs: {e}")
+        flash('An error occurred while loading jobs', 'error')
+        return render_template('jobs/list.html', jobs=[])
 
 
 @jobs_bp.route('/create', methods=['GET', 'POST'])

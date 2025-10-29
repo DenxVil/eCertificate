@@ -60,6 +60,14 @@ def create_app(config_name='default'):
     app.register_blueprint(jobs_bp, url_prefix='/jobs')
     app.register_blueprint(smart_cert_bp, url_prefix='/smart-certificate')
     
+    # Ensure database indexes are created
+    try:
+        from app.models.mongo_models import ensure_indexes
+        with app.app_context():
+            ensure_indexes()
+    except Exception as e:
+        logger.warning(f"Failed to create database indexes: {e}")
+    
     # Global error handlers
     @app.errorhandler(404)
     def not_found(error):
