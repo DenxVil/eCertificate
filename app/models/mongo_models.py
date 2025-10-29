@@ -18,13 +18,50 @@ def _check_db_connection():
         raise RuntimeError("Database is not available. Please check your MongoDB connection.")
 
 
+def ensure_indexes():
+    """Create database indexes for better query performance.
+    
+    This should be called once during application initialization.
+    """
+    try:
+        _check_db_connection()
+        
+        # Events collection indexes
+        mongo.db.events.create_index([("created_at", -1)])
+        mongo.db.events.create_index([("name", 1)])
+        
+        # Jobs collection indexes
+        mongo.db.jobs.create_index([("event_id", 1)])
+        mongo.db.jobs.create_index([("status", 1)])
+        mongo.db.jobs.create_index([("created_at", -1)])
+        mongo.db.jobs.create_index([("telegram_chat_id", 1)], sparse=True)
+        
+        # Participants collection indexes
+        mongo.db.participants.create_index([("job_id", 1)])
+        mongo.db.participants.create_index([("email", 1)])
+        
+        logger.info("Database indexes created successfully")
+    except Exception as e:
+        logger.warning(f"Failed to create indexes (this may be normal if they already exist): {e}")
+
+
 class Event:
     """Event model for managing different events."""
     
     @staticmethod
-    def find_all():
+    def find_all(sort_by='created_at', descending=True):
+        """Find all events with optional sorting.
+        
+        Args:
+            sort_by: Field to sort by (default: 'created_at')
+            descending: Sort in descending order (default: True)
+        
+        Returns:
+            List of event documents
+        """
         _check_db_connection()
-        return list(mongo.db.events.find())
+        sort_direction = -1 if descending else 1
+        return list(mongo.db.events.find().sort(sort_by, sort_direction))
 
     @staticmethod
     def find_by_id(event_id):

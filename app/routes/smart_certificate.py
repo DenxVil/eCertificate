@@ -21,9 +21,9 @@ def index():
 
 @smart_cert_bp.route('/scan', methods=['POST'])
 def scan_template():
-    """Scan uploaded template and detect fields."""
+    """Scan uploaded template and detect fields with optimized error handling."""
     try:
-        # Check if template file is present
+        # Validate request
         if 'template' not in request.files:
             return jsonify({'success': False, 'error': 'No template file provided'}), 400
         
@@ -35,6 +35,15 @@ def scan_template():
         # Validate file type
         if not allowed_file(template_file.filename, current_app.config['ALLOWED_EXTENSIONS']):
             return jsonify({'success': False, 'error': 'Invalid file type. Please upload PNG, JPG, or PDF'}), 400
+        
+        # Validate file size (prevent excessive memory usage)
+        template_file.seek(0, os.SEEK_END)
+        file_size = template_file.tell()
+        template_file.seek(0)
+        
+        max_size = current_app.config.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024)
+        if file_size > max_size:
+            return jsonify({'success': False, 'error': f'File too large. Maximum size: {max_size // (1024*1024)}MB'}), 400
         
         # Save uploaded file
         template_path = save_uploaded_file(template_file, current_app.config['UPLOAD_FOLDER'])
