@@ -1,10 +1,12 @@
-# 🎓 Denx Certificate Generator
+# 🎓 Goonj Certificate Generator
 
-A powerful web application for generating and distributing digital certificates with email delivery and Telegram bot integration.
+A powerful web application for generating and distributing digital certificates with AI-powered field detection, email delivery and Telegram bot integration.
 
 ## Features
 
-- ✅ **Custom Certificate Templates**: Upload your own certificate designs (PNG, JPG, SVG)
+- ✨ **NEW: Smart Certificate Generator**: Upload templates, AI detects fields automatically, perfect alignment guaranteed
+- ✨ **AI-Powered Field Detection**: Automatically scan and identify text fields in certificate templates
+- ✅ **Custom Certificate Templates**: Upload your own certificate designs (PNG, JPG, PDF)
 - ✅ **Event Management**: Create and manage multiple events with different templates
 - ✅ **Bulk Processing**: Upload participant lists via CSV or Excel files
 - ✅ **Automated Generation**: Certificates are generated automatically with participant names

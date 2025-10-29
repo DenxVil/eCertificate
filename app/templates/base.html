@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Denx Certificate Generator{% endblock %}</title>
+    <title>{% block title %}Goonj Certificate Generator{% endblock %}</title>
     <style>
         * {
             margin: 0;
@@ -195,9 +195,10 @@
 <body>
     <header>
         <nav>
-            <div class="logo">🎓 Denx Certificate Generator</div>
+            <div class="logo">🎓 Goonj Certificate Generator</div>
             <ul>
                 <li><a href="/">Home</a></li>
+                <li><a href="/smart-certificate/">Smart Generator</a></li>
                 <li><a href="/events/">Events</a></li>
                 <li><a href="/jobs/">Jobs</a></li>
                 <li><a href="/about">About</a></li>
@@ -222,7 +223,16 @@
     </div>
     
     <footer>
-        <p>&copy; 2024 Denx Certificate Generator. All rights reserved.</p>
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem 0; margin-top: 3rem;">
+            <div style="max-width: 1200px; margin: 0 auto; text-align: center; color: white;">
+                <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">🎓 Goonj Certificate Generator</p>
+                <p style="font-size: 0.9rem; opacity: 0.9;">Creating beautiful certificates, one at a time</p>
+                <p style="margin-top: 1.5rem; font-size: 0.95rem; font-style: italic;">
+                    ✨ Created with ❤️ by <strong style="font-size: 1.1rem;">Harsh</strong> ✨
+                </p>
+                <p style="font-size: 0.8rem; margin-top: 1rem; opacity: 0.8;">&copy; 2024 Goonj Certificate Generator. All rights reserved.</p>
+            </div>
+        </div>
     </footer>
     
     {% block extra_js %}{% endblock %}
