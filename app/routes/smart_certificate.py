@@ -79,7 +79,7 @@ def scan_template():
     
     except Exception as e:
         logger.error(f"Error scanning template: {e}", exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An error occurred while scanning the template'}), 500
 
 
 @smart_cert_bp.route('/generate', methods=['POST'])
@@ -130,7 +130,7 @@ def generate_certificate():
     
     except Exception as e:
         logger.error(f"Error generating certificate: {e}", exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An error occurred while generating the certificate'}), 500
 
 
 @smart_cert_bp.route('/download')
@@ -142,12 +142,22 @@ def download_certificate():
         if not cert_path:
             return jsonify({'error': 'Certificate path not provided'}), 400
         
-        # Ensure the path is safe and within the output folder
-        if not os.path.exists(cert_path):
+        # Security: Ensure the path is safe and within the output folder
+        # Get absolute paths for comparison
+        output_folder = os.path.abspath(current_app.config['OUTPUT_FOLDER'])
+        requested_path = os.path.abspath(cert_path)
+        
+        # Verify the path is within the allowed output folder
+        if not requested_path.startswith(output_folder):
+            logger.warning(f"Attempted access to file outside output folder: {cert_path}")
+            return jsonify({'error': 'Invalid file path'}), 403
+        
+        # Check if file exists
+        if not os.path.exists(requested_path):
             return jsonify({'error': 'Certificate not found'}), 404
         
-        return send_file(cert_path, as_attachment=True)
+        return send_file(requested_path, as_attachment=True)
     
     except Exception as e:
         logger.error(f"Error downloading certificate: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while downloading the certificate'}), 500
