@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GOONJ Certificate | AMA</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/goonj.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">AMA • GOONJ</div>
+      <nav class="nav">
+        <a href="/goonj" class="active">GOONJ</a>
+        <a href="/about">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Generate Your GOONJ Certificate</h1>
+      <p>Fill in the fields or upload a CSV. We'll place the details on the GOONJ template and download your certificate.</p>
+      <div id="status" class="status muted">Checking template and email status…</div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Single Participant</h2>
+        <form class="form" action="{{ url_for('goonj.generate_certificate') }}" method="post">
+          <div class="field">
+            <label for="name">Name<span class="req">*</span></label>
+            <input id="name" name="name" type="text" required placeholder="Full name">
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="name@example.com">
+          </div>
+          <div class="field">
+            <label for="event">Event</label>
+            <input id="event" name="event" type="text" value="GOONJ" placeholder="GOONJ">
+          </div>
+          <div class="field">
+            <label for="date">Date</label>
+            <input id="date" name="date" type="text" placeholder="e.g., October 30, 2025">
+          </div>
+          <div class="field">
+            <label for="format">Format</label>
+            <select id="format" name="format">
+              <option value="png">PNG</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </div>
+          <button class="btn primary" type="submit">Generate & Download</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>CSV Upload (first row)</h2>
+        <form class="form" action="{{ url_for('goonj.generate_certificate') }}" method="post" enctype="multipart/form-data">
+          <div class="field">
+            <label for="file">CSV file</label>
+            <input id="file" name="file" type="file" accept=".csv">
+          </div>
+          <div class="field">
+            <label for="format2">Format</label>
+            <select id="format2" name="format">
+              <option value="png">PNG</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </div>
+          <button class="btn" type="submit">Generate from CSV</button>
+        </form>
+        <p class="muted small">CSV headers supported: name, email, event, date. The first valid row will be used.</p>
+      </div>
+    </section>
+
+    <section class="help card">
+      <h2>How it works</h2>
+      <ol>
+        <li>Enter participant info or upload a CSV.</li>
+        <li>We place it on the GOONJ certificate template.</li>
+        <li>Your file downloads automatically. If email is provided and configured, a copy is sent too.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    {% include 'partials/creator_card.html' %}
+  </footer>
+
+  <script>
+  fetch("{{ url_for('goonj.status') }}")
+    .then(r => r.json())
+    .then(data => {
+      const el = document.getElementById('status');
+      const tpl = data.template_exists ? 'Template OK' : 'Template MISSING';
+      const smtp = data.smtp_configured ? 'Email OK' : 'Email not configured';
+      el.textContent = `${tpl} • ${smtp}`;
+      el.classList.remove('muted');
+    })
+    .catch(() => {
+      const el = document.getElementById('status');
+      el.textContent = 'Status unavailable';
+      el.classList.add('muted');
+    });
+  </script>
+</body>
+</html>

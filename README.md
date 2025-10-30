@@ -240,6 +240,10 @@ curl http://localhost:5000/goonj/status
 - The GOONJ template must exist at `templates/goonj_certificate.png`
 - Generated certificates are saved in the `OUTPUT_FOLDER` directory
 
+## GOONJ Web Page
+
+Use the browser page at `/goonj` to generate a single certificate or upload a CSV (first row used). The API `/goonj/generate` remains available for programmatic access.
+
 ### Using the Telegram Bot
 
 1. Open Telegram and search for your bot

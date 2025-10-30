@@ -1,5 +1,5 @@
 """GOONJ certificate generation routes."""
-from flask import Blueprint, request, jsonify, send_file, current_app
+from flask import Blueprint, request, jsonify, send_file, current_app, render_template
 from app.utils.goonj_renderer import GOONJRenderer
 from app.utils.mail import send_goonj_certificate
 import os
@@ -10,6 +10,12 @@ import logging
 
 goonj_bp = Blueprint('goonj', __name__)
 logger = logging.getLogger(__name__)
+
+
+@goonj_bp.route('/', methods=['GET'])
+def goonj_page():
+    """Render the GOONJ UI page."""
+    return render_template('goonj.html')
 
 
 def parse_csv_file(file_storage):
