@@ -33,16 +33,12 @@
             <input id="name" name="name" type="text" required placeholder="Full name">
           </div>
           <div class="field">
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" placeholder="name@example.com">
-          </div>
-          <div class="field">
             <label for="event">Event</label>
             <input id="event" name="event" type="text" value="GOONJ" placeholder="GOONJ">
           </div>
           <div class="field">
-            <label for="date">Date</label>
-            <input id="date" name="date" type="text" placeholder="e.g., October 30, 2025">
+            <label for="organiser">Organised By</label>
+            <input id="organiser" name="organiser" type="text" value="AMA" placeholder="AMA">
           </div>
           <div class="field">
             <label for="format">Format</label>
@@ -71,7 +67,7 @@
           </div>
           <button class="btn" type="submit">Generate from CSV</button>
         </form>
-        <p class="muted small">CSV headers supported: name, email, event, date. The first valid row will be used.</p>
+        <p class="muted small">CSV headers supported: name, event, organiser (email optional for delivery). The first valid row will be used.</p>
       </div>
     </section>
 

@@ -30,69 +30,109 @@ class GOONJRenderer:
         self.template = Image.open(template_path).convert("RGB")
         width, height = self.template.size
         
-        # Define bounding boxes for GOONJ certificate (2000x1414 template)
-        # These positions are optimized for the GOONJ template layout
+        # Store dimensions
+        self.width = width
+        self.height = height
+        
+        # Define bounding boxes for GOONJ certificate (supports three fields only)
+        # Positions as percentage of template height for vertical placement
+        # NAME at ~33% (32-35%), EVENT at ~42% (41-43%), ORGANISED BY at ~51% (49-52%)
         self.name_bbox = {
             'x': width // 2,
-            'y': int(height * 0.48),  # Approximately 48% down
-            'font_size': 80,
-            'color': '#1a5490'
+            'y': int(height * 0.33),  # 33% down
+            'base_font_size': int(height * 0.05),  # ~5% of height
+            'color': '#000000'  # Pure black
         }
         
         self.event_bbox = {
             'x': width // 2,
-            'y': int(height * 0.60),  # Approximately 60% down
-            'font_size': 50,
-            'color': '#333333'
+            'y': int(height * 0.42),  # 42% down
+            'base_font_size': int(height * 0.042),  # ~4.2% of height
+            'color': '#000000'  # Pure black
         }
         
-        self.date_bbox = {
+        self.organiser_bbox = {
             'x': width // 2,
-            'y': int(height * 0.75),  # Approximately 75% down
-            'font_size': 35,
-            'color': '#555555'
+            'y': int(height * 0.51),  # 51% down
+            'base_font_size': int(height * 0.042),  # ~4.2% of height
+            'color': '#000000'  # Pure black
         }
         
-        self.email_bbox = {
-            'x': width // 2,
-            'y': int(height * 0.85),  # Approximately 85% down
-            'font_size': 25,
-            'color': '#777777'
-        }
+        # Max width for text (80-85% of image width)
+        self.max_text_width = int(width * 0.825)  # 82.5% of width
         
         self._load_fonts()
     
     def _load_fonts(self):
-        """Load fonts for text rendering."""
-        try:
-            # Try to load Arial/Helvetica fonts
-            self.name_font = ImageFont.truetype("arial.ttf", self.name_bbox['font_size'])
-            self.event_font = ImageFont.truetype("arial.ttf", self.event_bbox['font_size'])
-            self.date_font = ImageFont.truetype("arial.ttf", self.date_bbox['font_size'])
-            self.email_font = ImageFont.truetype("arial.ttf", self.email_bbox['font_size'])
-        except (OSError, IOError):
+        """Load bold sans-serif fonts for text rendering.
+        
+        Attempts to load Arial Black or arialbd.ttf, falls back to DejaVuSans-Bold.
+        """
+        # Font paths to try (bold sans-serif)
+        font_paths = [
+            "arialbd.ttf",  # Arial Bold
+            "/usr/share/fonts/truetype/msttcorefonts/arialbd.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/System/Library/Fonts/Supplemental/Arial Bold.ttf",  # macOS
+        ]
+        
+        self.font_path = None
+        for path in font_paths:
             try:
-                # Try alternative font names
-                self.name_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 
-                                                   self.name_bbox['font_size'])
-                self.event_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 
-                                                     self.event_bbox['font_size'])
-                self.date_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 
-                                                   self.date_bbox['font_size'])
-                self.email_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 
-                                                    self.email_bbox['font_size'])
+                # Test if font can be loaded
+                ImageFont.truetype(path, 20)
+                self.font_path = path
+                logger.info(f"Using font: {path}")
+                break
             except (OSError, IOError):
-                # Fallback to default font
-                logger.warning("Could not load TrueType fonts, using default font")
-                self.name_font = ImageFont.load_default()
-                self.event_font = ImageFont.load_default()
-                self.date_font = ImageFont.load_default()
-                self.email_font = ImageFont.load_default()
+                continue
+        
+        if not self.font_path:
+            logger.warning("Could not load bold TrueType fonts, using default font")
+            self.font_path = None  # Will use default
     
     def _hex_to_rgb(self, hex_color):
         """Convert hex color to RGB tuple."""
         hex_color = hex_color.lstrip('#')
         return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+    
+    def _get_font(self, size):
+        """Get a font at the specified size."""
+        if self.font_path:
+            try:
+                return ImageFont.truetype(self.font_path, size)
+            except (OSError, IOError):
+                pass
+        return ImageFont.load_default()
+    
+    def _fit_text_to_width(self, draw, text, base_font_size, max_width):
+        """Scale down text to fit within max_width.
+        
+        Args:
+            draw: ImageDraw object
+            text: Text to fit
+            base_font_size: Starting font size
+            max_width: Maximum width in pixels
+            
+        Returns:
+            Font object that fits the text within max_width
+        """
+        font_size = base_font_size
+        font = self._get_font(font_size)
+        
+        # Get text width
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        
+        # Scale down if needed
+        while text_width > max_width and font_size > 10:
+            font_size -= 1
+            font = self._get_font(font_size)
+            bbox = draw.textbbox((0, 0), text, font=font)
+            text_width = bbox[2] - bbox[0]
+        
+        return font
     
     def render(self, participant_data, output_format='png'):
         """Render a certificate for a single participant.
@@ -100,7 +140,7 @@ class GOONJRenderer:
         Args:
             participant_data: Dictionary with participant information
                 Required: 'name'
-                Optional: 'event', 'date', 'email', 'certificate_id'
+                Optional: 'event', 'organiser' (or 'organizer')
             output_format: Output format ('png' or 'pdf')
         
         Returns:
@@ -110,57 +150,67 @@ class GOONJRenderer:
         cert_image = self.template.copy()
         draw = ImageDraw.Draw(cert_image)
         
-        # Extract participant data
+        # Extract participant data (only three fields supported)
         name = participant_data.get('name', 'Participant')
-        event = participant_data.get('event', 'GOONJ Event')
-        date_str = participant_data.get('date', datetime.now().strftime("%B %d, %Y"))
-        email = participant_data.get('email', '')
-        cert_id = participant_data.get('certificate_id', '')
+        event = participant_data.get('event', 'GOONJ')
+        # Accept both British and American spellings
+        organiser = participant_data.get('organiser') or participant_data.get('organizer', 'AMA')
         
-        # Draw participant name
-        name_color = self._hex_to_rgb(self.name_bbox['color'])
+        # Uppercase all fields as per specification
+        name_upper = name.upper()
+        event_upper = event.upper()
+        organiser_upper = organiser.upper()
+        
+        # Color is pure black for all fields
+        text_color = self._hex_to_rgb(self.name_bbox['color'])
+        
+        # Draw participant name (centered, ~33% down)
+        name_font = self._fit_text_to_width(
+            draw, 
+            name_upper, 
+            self.name_bbox['base_font_size'],
+            self.max_text_width
+        )
         self._draw_centered_text(
             draw, 
-            name.upper(), 
+            name_upper, 
             self.name_bbox['x'], 
             self.name_bbox['y'],
-            self.name_font,
-            name_color
+            name_font,
+            text_color
         )
         
-        # Draw event name
-        event_color = self._hex_to_rgb(self.event_bbox['color'])
+        # Draw event name (centered, ~42% down)
+        event_font = self._fit_text_to_width(
+            draw,
+            event_upper,
+            self.event_bbox['base_font_size'],
+            self.max_text_width
+        )
         self._draw_centered_text(
             draw,
-            event,
+            event_upper,
             self.event_bbox['x'],
             self.event_bbox['y'],
-            self.event_font,
-            event_color
+            event_font,
+            text_color
         )
         
-        # Draw date
-        date_color = self._hex_to_rgb(self.date_bbox['color'])
+        # Draw organiser (centered, ~51% down)
+        organiser_font = self._fit_text_to_width(
+            draw,
+            organiser_upper,
+            self.organiser_bbox['base_font_size'],
+            self.max_text_width
+        )
         self._draw_centered_text(
             draw,
-            f"Date: {date_str}",
-            self.date_bbox['x'],
-            self.date_bbox['y'],
-            self.date_font,
-            date_color
+            organiser_upper,
+            self.organiser_bbox['x'],
+            self.organiser_bbox['y'],
+            organiser_font,
+            text_color
         )
-        
-        # Draw email if provided
-        if email:
-            email_color = self._hex_to_rgb(self.email_bbox['color'])
-            self._draw_centered_text(
-                draw,
-                email,
-                self.email_bbox['x'],
-                self.email_bbox['y'],
-                self.email_font,
-                email_color
-            )
         
         # Generate filename
         safe_name = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in name)

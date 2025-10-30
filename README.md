@@ -185,9 +185,8 @@ curl -X POST http://localhost:5000/goonj/generate \
   -H "Content-Type: application/json" \
   -d '{
     "name": "John Doe",
-    "email": "john@example.com",
-    "event": "GOONJ 2024",
-    "date": "October 30, 2024"
+    "event": "GOONJ 2025",
+    "organiser": "AMA"
   }' \
   --output certificate.png
 ```
@@ -196,9 +195,8 @@ curl -X POST http://localhost:5000/goonj/generate \
 ```bash
 curl -X POST http://localhost:5000/goonj/generate \
   -F "name=John Doe" \
-  -F "email=john@example.com" \
-  -F "event=GOONJ 2024" \
-  -F "date=October 30, 2024" \
+  -F "event=GOONJ 2025" \
+  -F "organiser=AMA" \
   -F "format=png" \
   --output certificate.png
 ```
@@ -214,16 +212,16 @@ curl -X POST http://localhost:5000/goonj/generate \
 4. **CSV Text**
 ```bash
 curl -X POST http://localhost:5000/goonj/generate \
-  -F "csv_text=name,email,event
-John Doe,john@example.com,GOONJ 2024" \
+  -F "csv_text=name,event,organiser
+John Doe,GOONJ 2025,AMA" \
   --output certificate.png
 ```
 
 **Parameters:**
 - `name` (required): Participant name
-- `email` (optional): Participant email (certificate will be emailed if SMTP is configured)
 - `event` (optional): Event name (default: "GOONJ")
-- `date` (optional): Event date (default: current date)
+- `organiser` (optional): Organisation name (accepts 'organiser' or 'organizer'; default: "AMA")
+- `email` (optional): Participant email (certificate will be emailed if provided and SMTP is configured; not rendered on certificate)
 - `format` (optional): Output format - `png` or `pdf` (default: `png`)
 
 **Response:**
@@ -236,13 +234,14 @@ curl http://localhost:5000/goonj/status
 ```
 
 **Notes:**
-- If `email` is provided and SMTP is configured, the certificate will be automatically emailed to the participant
+- Only three fields are rendered on the certificate: Name, Event, and Organised By
+- If `email` is provided in CSV/JSON and SMTP is configured, the certificate will be automatically emailed to the participant
 - The GOONJ template must exist at `templates/goonj_certificate.png`
 - Generated certificates are saved in the `OUTPUT_FOLDER` directory
 
 ## GOONJ Web Page
 
-Use the browser page at `/goonj` to generate a single certificate or upload a CSV (first row used). The API `/goonj/generate` remains available for programmatic access.
+Use the browser page at `/goonj` to generate a single certificate or upload a CSV (first row used). The form includes three fields: Name, Event, and Organised By. Email can be included in CSV for optional delivery. The API `/goonj/generate` remains available for programmatic access.
 
 ### Using the Telegram Bot
 
