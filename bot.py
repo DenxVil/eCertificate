@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 from dotenv import load_dotenv
@@ -20,6 +21,13 @@ from app.routes.jobs import process_job
 
 # Load environment variables
 load_dotenv()
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Conversation states
 SELECTING_EVENT, UPLOADING_CSV, CUSTOMIZING_CERTIFICATE = range(3)
@@ -317,7 +325,7 @@ def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     
     if not token:
-        print("Error: TELEGRAM_BOT_TOKEN not set in environment variables")
+        logger.error("TELEGRAM_BOT_TOKEN not set in environment variables")
         return
     
     application = Application.builder().token(token).build()
@@ -340,7 +348,7 @@ def main():
     )
     application.add_handler(conv_handler)
     
-    print("Starting Telegram bot...")
+    logger.info("Starting Telegram bot...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 

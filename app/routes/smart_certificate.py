@@ -1,5 +1,5 @@
 """Smart certificate generation routes with AI-powered field detection."""
-from flask import Blueprint, render_template, request, jsonify, current_app, send_file
+from flask import Blueprint, request, jsonify, current_app, send_file, redirect, url_for
 from app.utils.certificate_scanner import CertificateScanner, SmartCertificateAligner
 from app.utils import allowed_file, save_uploaded_file
 from app.models.mongo_models import Scan
@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 @smart_cert_bp.route('/')
 def index():
-    """Smart certificate generator page."""
-    return render_template('smart_certificate.html')
+    """Redirect to main page (Smart Certificate Generator is now on the homepage)."""
+    return redirect(url_for('main.index'))
 
 
 @smart_cert_bp.route('/scan', methods=['POST'])
