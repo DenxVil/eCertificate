@@ -1,0 +1,62 @@
+# Docker Compose configuration with PostgreSQL + Redis (Hybrid setup)
+# Usage: docker compose -f docker-compose.hybrid.yml up --build
+#
+# This setup uses:
+# - PostgreSQL for persistent data
+# - Redis for caching and session storage
+#
+# NOTE: This requires code changes to use SQLAlchemy and Flask-Redis
+# See DATABASE_OPTIONS.md for implementation details
+
+version: "3.9"
+services:
+  app:
+    build: .
+    command: gunicorn --bind 0.0.0.0:8000 "app:create_app()" --workers 3
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ecertificate
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ecertificate
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  redis-data:

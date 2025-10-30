@@ -80,5 +80,11 @@ def create_app(config_name='default'):
         logger.error(f"Internal server error: {error}")
         return jsonify({'error': 'Internal server error'}), 500
     
+    @app.errorhandler(RuntimeError)
+    def handle_runtime_error(err):
+        """Handle RuntimeError (e.g., database unavailable) with 503."""
+        logger.error(f"Runtime error: {err}")
+        return (str(err), 503)
+    
     logger.info(f"Flask app created successfully with config: {config_name}")
     return app
