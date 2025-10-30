@@ -143,3 +143,6 @@ AzureCLI.zip
 # Test files
 uploads/test_certificate_template.png
 generated_certificates/
+
+# Archived templates (old UI)
+app/templates/_archived/

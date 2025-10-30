@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 from dotenv import load_dotenv
@@ -20,6 +21,13 @@ from app.routes.jobs import process_job
 
 # Load environment variables
 load_dotenv()
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Conversation states
 SELECTING_EVENT, UPLOADING_CSV, CUSTOMIZING_CERTIFICATE = range(3)
@@ -312,12 +320,35 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Invalid job ID or error fetching status: {e}")
 
 
+async def handle_unknown_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle any text message that's not a command."""
+    try:
+        response = """
+👋 *Hello!* I'm the Denx Certificate Generator Bot.
+
+I can help you generate and send certificates to participants.
+
+*Available Commands:*
+/start - Show welcome message
+/newjob - Start a new certificate generation job
+/status <job_id> - Check the status of a job
+/events - List all available events
+/help - Show detailed help information
+
+Type a command to get started! 🚀
+        """
+        await update.message.reply_text(response, parse_mode='Markdown')
+    except Exception as e:
+        logger.error(f"Error handling unknown message: {e}")
+        await update.message.reply_text("Sorry, I encountered an error. Please try using one of my commands: /start, /newjob, /status, /events, /help")
+
+
 def main():
     """Run the Telegram bot."""
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     
     if not token:
-        print("Error: TELEGRAM_BOT_TOKEN not set in environment variables")
+        logger.error("TELEGRAM_BOT_TOKEN not set in environment variables")
         return
     
     application = Application.builder().token(token).build()
@@ -340,7 +371,10 @@ def main():
     )
     application.add_handler(conv_handler)
     
-    print("Starting Telegram bot...")
+    # Add handler for all other text messages (not in conversation and not commands)
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_unknown_message))
+    
+    logger.info("Starting Telegram bot...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 

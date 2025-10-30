@@ -1,62 +1,552 @@
 {% extends "base.html" %}
 
+{% block title %}Smart Certificate Generator - Goonj{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        text-align: center;
+        padding: 3rem 0;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        border-radius: 20px;
+        margin-bottom: 3rem;
+    }
+    
+    .hero-title {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.3rem;
+        color: #666;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+    
+    .workflow-steps {
+        display: flex;
+        justify-content: space-between;
+        margin: 3rem 0;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 15px;
+    }
+    
+    .step {
+        flex: 1;
+        text-align: center;
+        padding: 1rem;
+        position: relative;
+    }
+    
+    .step::after {
+        content: '→';
+        position: absolute;
+        right: -15px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5rem;
+        color: #667eea;
+    }
+    
+    .step:last-child::after {
+        content: '';
+    }
+    
+    .step.active {
+        background: #667eea;
+        color: white;
+        border-radius: 10px;
+    }
+    
+    .step.completed {
+        background: #28a745;
+        color: white;
+        border-radius: 10px;
+    }
+    
+    .upload-area {
+        border: 3px dashed #667eea;
+        border-radius: 15px;
+        padding: 4rem 2rem;
+        text-align: center;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin: 2rem 0;
+    }
+    
+    .upload-area:hover {
+        background: #e9ecef;
+        border-color: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    }
+    
+    .upload-area.dragover {
+        background: #d4edda;
+        border-color: #28a745;
+    }
+    
+    .field-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+    }
+    
+    .field-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+    
+    .field-label {
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .field-details {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    
+    .preview-image {
+        max-width: 100%;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        margin-top: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(102, 126, 234, 0.3);
+        border-radius: 50%;
+        border-top-color: #667eea;
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .success-box {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        border: 2px solid #28a745;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 30px;
+        font-size: 1.1rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: bold;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+    
+    .feature-card {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="text-align: center; padding: 2rem 0;">
-    <h1 style="font-size: 3rem; margin-bottom: 1rem;">🎓 Welcome to Goonj Certificate Generator</h1>
-    <p style="font-size: 1.2rem; color: #666; margin-bottom: 2rem;">
-        Smart certificate generation with AI-powered template scanning
+<!-- Hero Section -->
+<div class="hero-section">
+    <h1 class="hero-title">🎯 Smart Certificate Generator</h1>
+    <p class="hero-subtitle">
+        Upload your certificate template, let AI detect the fields,<br>
+        and generate perfectly aligned certificates in seconds!
     </p>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin-top: 3rem; max-width: 900px; margin-left: auto; margin-right: auto;">
-        <!-- Smart Certificate Generator - Primary Feature -->
-        <div style="padding: 2.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white; box-shadow: 0 8px 25px rgba(0,0,0,0.15); transform: scale(1); transition: transform 0.3s;">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">🎯</div>
-            <h2 style="color: white; font-size: 1.8rem; margin-bottom: 1rem;">Smart Certificate Generator</h2>
-            <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem;">
-                Upload your template, AI detects fields automatically, enter values - perfect certificates in seconds!
-            </p>
-            <a href="/smart-certificate/" class="btn" style="margin-top: 1rem; background: white; color: #667eea; font-weight: bold; padding: 12px 30px; font-size: 1.1rem;">
-                Start Generating →
-            </a>
-        </div>
-        
-        <!-- Bulk Certificate Generation via Telegram Bot -->
-        <div style="padding: 2.5rem; background: linear-gradient(135deg, #26c6da 0%, #00acc1 100%); border-radius: 15px; color: white; box-shadow: 0 8px 25px rgba(0,0,0,0.15); transform: scale(1); transition: transform 0.3s;">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">📱</div>
-            <h2 style="color: white; font-size: 1.8rem; margin-bottom: 1rem;">Telegram Bot</h2>
-            <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem;">
-                Generate and send bulk certificates to participants via our intelligent Telegram bot interface.
-            </p>
-            <a href="/jobs/create" class="btn" style="margin-top: 1rem; background: white; color: #00acc1; font-weight: bold; padding: 12px 30px; font-size: 1.1rem;">
-                Create Bulk Job →
-            </a>
-        </div>
+</div>
+
+<!-- Workflow Steps -->
+<div class="workflow-steps">
+    <div class="step" id="step1">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📄</div>
+        <div style="font-weight: bold;">Upload Template</div>
     </div>
-    
-    <div style="margin-top: 4rem; padding: 2.5rem; background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 15px; max-width: 900px; margin-left: auto; margin-right: auto;">
-        <h2 style="color: #667eea; margin-bottom: 1.5rem;">✨ Key Features</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; text-align: left;">
-            <div>
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🤖</div>
-                <strong>AI-Powered Detection</strong>
-                <p style="font-size: 0.9rem; color: #666; margin-top: 0.3rem;">Automatic field scanning and positioning</p>
-            </div>
-            <div>
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📄</div>
-                <strong>Custom Templates</strong>
-                <p style="font-size: 0.9rem; color: #666; margin-top: 0.3rem;">PNG, JPG, or PDF formats supported</p>
-            </div>
-            <div>
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📧</div>
-                <strong>Email Delivery</strong>
-                <p style="font-size: 0.9rem; color: #666; margin-top: 0.3rem;">Automatic email to participants</p>
-            </div>
-            <div>
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
-                <strong>Job Tracking</strong>
-                <p style="font-size: 0.9rem; color: #666; margin-top: 0.3rem;">Monitor generation progress in real-time</p>
-            </div>
-        </div>
+    <div class="step" id="step2">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔍</div>
+        <div style="font-weight: bold;">AI Scans</div>
+    </div>
+    <div class="step" id="step3">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✏️</div>
+        <div style="font-weight: bold;">Enter Values</div>
+    </div>
+    <div class="step" id="step4">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✅</div>
+        <div style="font-weight: bold;">Download</div>
     </div>
 </div>
+
+<!-- Step 1: Upload Template -->
+<div id="upload-section">
+    <form id="uploadForm" enctype="multipart/form-data">
+        <div class="upload-area" id="uploadArea">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">📤</div>
+            <h2 style="color: #667eea; margin-bottom: 0.5rem;">Upload Your Certificate Template</h2>
+            <p style="color: #666; margin: 1rem 0; font-size: 1.1rem;">
+                Drag & drop your file here or click to browse
+            </p>
+            <input type="file" id="templateFile" name="template" accept="image/png,image/jpeg,image/jpg,application/pdf" style="display: none;">
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('templateFile').click()">
+                Choose File
+            </button>
+            <p style="font-size: 0.95rem; color: #999; margin-top: 1.5rem;">
+                Supported formats: PNG, JPG, PDF • Max size: 16MB
+            </p>
+        </div>
+    </form>
+</div>
+
+<!-- Step 2: Scanning Results -->
+<div id="scanning-section" style="display: none;">
+    <h2 style="color: #667eea; margin-bottom: 1rem;">🔍 Analyzing Your Template...</h2>
+    <div style="text-align: center; padding: 4rem 2rem; background: #f8f9fa; border-radius: 15px;">
+        <div class="loading" style="width: 60px; height: 60px; border-width: 5px;"></div>
+        <p style="margin-top: 2rem; color: #666; font-size: 1.1rem;">
+            Our AI is detecting text fields in your template...<br>
+            <small style="color: #999;">This usually takes a few seconds</small>
+        </p>
+    </div>
+</div>
+
+<!-- Step 3: Fields Detected -->
+<div id="fields-section" style="display: none;">
+    <h2 style="color: #667eea; margin-bottom: 1rem;">✏️ Enter Values for Detected Fields</h2>
+    <p style="color: #666; margin-bottom: 2rem; font-size: 1.05rem;">
+        We found the following fields in your certificate. Please enter the values you want:
+    </p>
+    
+    <div id="detectedFields">
+        <!-- Fields will be dynamically added here -->
+    </div>
+    
+    <div style="margin-top: 2.5rem; text-align: center;">
+        <button type="button" class="btn btn-primary" id="generateBtn" style="font-size: 1.2rem; padding: 15px 40px;">
+            Generate Certificate ✨
+        </button>
+    </div>
+</div>
+
+<!-- Step 4: Generated Certificate -->
+<div id="result-section" style="display: none;">
+    <div class="success-box">
+        <h2 style="color: #28a745; margin-bottom: 0.5rem;">✅ Certificate Generated Successfully!</h2>
+        <p style="color: #155724; margin: 0; font-size: 1.1rem;">Your perfectly aligned certificate is ready to download</p>
+    </div>
+    
+    <div id="certificatePreview" style="text-align: center;">
+        <!-- Certificate preview will be shown here -->
+    </div>
+    
+    <div style="margin-top: 2rem; text-align: center;">
+        <button type="button" class="btn btn-primary" id="downloadBtn" style="margin-right: 1rem;">
+            📥 Download Certificate
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="location.reload()">
+            🔄 Generate Another
+        </button>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="features-grid" style="margin-top: 4rem;">
+    <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3 style="color: #667eea; margin-bottom: 0.5rem;">AI-Powered</h3>
+        <p style="color: #666; font-size: 0.95rem;">Automatic field detection using advanced OCR technology</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3 style="color: #667eea; margin-bottom: 0.5rem;">Lightning Fast</h3>
+        <p style="color: #666; font-size: 0.95rem;">Generate certificates in seconds, not minutes</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3 style="color: #667eea; margin-bottom: 0.5rem;">Perfect Alignment</h3>
+        <p style="color: #666; font-size: 0.95rem;">AI ensures text is perfectly positioned every time</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <h3 style="color: #667eea; margin-bottom: 0.5rem;">Any Template</h3>
+        <p style="color: #666; font-size: 0.95rem;">Works with PNG, JPG, and PDF templates</p>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let scannedData = null;
+let fieldValues = {};
+
+// Upload area drag and drop
+const uploadArea = document.getElementById('uploadArea');
+const templateFile = document.getElementById('templateFile');
+
+uploadArea.addEventListener('click', (e) => {
+    if (e.target !== uploadArea && e.target.parentElement !== uploadArea) return;
+    templateFile.click();
+});
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        templateFile.files = files;
+        handleFileUpload(files[0]);
+    }
+});
+
+templateFile.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFileUpload(e.target.files[0]);
+    }
+});
+
+function handleFileUpload(file) {
+    // Show file upload confirmation
+    const uploadArea = document.getElementById('uploadArea');
+    uploadArea.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+        <h3 style="color: #28a745; margin-bottom: 0.5rem;">File Uploaded Successfully!</h3>
+        <p style="color: #666; margin: 1rem 0; font-size: 1.1rem;">
+            <strong>${file.name}</strong> (${(file.size / 1024 / 1024).toFixed(2)} MB)
+        </p>
+        <p style="color: #666; font-size: 0.95rem;">Starting AI analysis...</p>
+    `;
+    
+    // Wait a moment to show the confirmation before proceeding
+    setTimeout(() => {
+        // Show scanning section
+        setStep(2);
+        document.getElementById('upload-section').style.display = 'none';
+        document.getElementById('scanning-section').style.display = 'block';
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('template', file);
+    
+    // Upload and scan
+    fetch('/smart-certificate/scan', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.error || 'Server error');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            scannedData = data;
+            displayDetectedFields(data.fields);
+        } else {
+            alert('Error scanning template: ' + (data.error || 'Unknown error'));
+            location.reload();
+        }
+    })
+    .catch(error => {
+        alert('Error uploading template: ' + error.message);
+        location.reload();
+    });
+    }, 1500); // Show confirmation for 1.5 seconds before proceeding
+}
+
+function displayDetectedFields(fields) {
+    setStep(3);
+    document.getElementById('scanning-section').style.display = 'none';
+    document.getElementById('fields-section').style.display = 'block';
+    
+    const container = document.getElementById('detectedFields');
+    container.innerHTML = '';
+    
+    if (!fields || fields.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 3rem; background: #fff3cd; border-radius: 12px; border: 2px solid #ffc107;">
+                <p style="color: #856404; font-size: 1.1rem; margin: 0;">
+                    ⚠️ No fields detected in your template.<br>
+                    <small>The template may not have editable text fields or they couldn't be detected.</small>
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
+    fields.forEach((field, index) => {
+        const fieldCard = document.createElement('div');
+        fieldCard.className = 'field-card';
+        fieldCard.innerHTML = `
+            <div class="field-label">📝 Field ${index + 1}: "${field.text}"</div>
+            <div class="field-details">
+                📍 Position: (${(field.x * 100).toFixed(1)}%, ${(field.y * 100).toFixed(1)}%) | 
+                🔤 Font Size: ${field.font_size}px | 
+                ↔️ Alignment: ${field.alignment} |
+                🏷️ Type: ${field.field_type}
+            </div>
+            <div style="margin-top: 1rem;">
+                <label for="field_${index}" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                    Enter value for this field:
+                </label>
+                <input type="text" 
+                       id="field_${index}" 
+                       data-field-text="${field.text}"
+                       placeholder="Enter ${field.text}" 
+                       style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; transition: all 0.3s;"
+                       onfocus="this.style.borderColor='#667eea'"
+                       onblur="this.style.borderColor='#e0e0e0'">
+            </div>
+        `;
+        container.appendChild(fieldCard);
+    });
+}
+
+document.getElementById('generateBtn').addEventListener('click', () => {
+    // Collect field values
+    const fields = scannedData.fields;
+    fieldValues = {};
+    
+    fields.forEach((field, index) => {
+        const input = document.getElementById(`field_${index}`);
+        if (input) {
+            fieldValues[field.text] = input.value || field.text;
+        }
+    });
+    
+    // Show loading state
+    const generateBtn = document.getElementById('generateBtn');
+    const originalBtnText = generateBtn.innerHTML;
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<span class="loading" style="margin-right: 10px;"></span> Generating Your Certificate...';
+    
+    // Generate certificate
+    fetch('/smart-certificate/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            template_path: scannedData.template_path,
+            fields: fieldValues
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.error || 'Server error');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            setStep(4);
+            document.getElementById('fields-section').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+            displayGeneratedCertificate(data);
+        } else {
+            throw new Error(data.error || 'Unknown error');
+        }
+    })
+    .catch(error => {
+        alert('Error generating certificate: ' + error.message);
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = originalBtnText;
+    });
+});
+
+function displayGeneratedCertificate(data) {
+    const preview = document.getElementById('certificatePreview');
+    preview.innerHTML = `
+        <img src="/${data.certificate_path}" class="preview-image" alt="Generated Certificate">
+    `;
+    
+    document.getElementById('downloadBtn').onclick = () => {
+        window.location.href = '/smart-certificate/download?path=' + encodeURIComponent(data.certificate_path);
+    };
+}
+
+function setStep(stepNumber) {
+    // Update step indicators
+    for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById(`step${i}`);
+        step.classList.remove('active', 'completed');
+        if (i < stepNumber) {
+            step.classList.add('completed');
+        } else if (i === stepNumber) {
+            step.classList.add('active');
+        }
+    }
+}
+
+// Initialize
+setStep(1);
+</script>
 {% endblock %}
