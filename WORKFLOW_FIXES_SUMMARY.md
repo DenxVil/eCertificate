@@ -7,7 +7,7 @@ This document summarizes all the issues found and fixed in the eCertificate repo
 
 ---
 
-## Critical Issues Fixed
+## Critical Issues Fixe
 
 ### 1. **Workflow Deployment Failures** ✅
 **Issue**: All Azure deployment workflows were failing with ACR Tasks error
