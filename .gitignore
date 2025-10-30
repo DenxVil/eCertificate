@@ -138,7 +138,6 @@ AzureCLI/
 AzureCLI.zip
 
 # Docker
-.dockerignore
 
 # Temporary files
 *.tmp
