@@ -1,10 +1,220 @@
-.creator-card { display:inline-block; padding:10px; border-radius:12px; background:linear-gradient(135deg,#0f172a 0%,#0ea5a0 100%); color:#fff; box-shadow:0 8px 24px rgba(2,6,23,0.45); font-family:Inter,Segoe UI,Roboto,Arial,sans-serif; margin:12px; min-width:220px; max-width:320px; transition:transform .18s ease,box-shadow .18s ease; }
-.creator-card:hover { transform:translateY(-4px) scale(1.01); box-shadow:0 12px 36px rgba(2,6,23,0.55); }
-.creator-inner { display:flex; align-items:center; gap:12px; }
-.creator-avatar { width:56px; height:56px; min-width:56px; border-radius:12px; background:linear-gradient(135deg,#fff3 0%,#ffffff22 100%); display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid rgba(255,255,255,0.08); }
-.creator-initials { font-weight:700; font-size:20px; color:#04122a; background:linear-gradient(90deg,#fffb 0,#fff0 100%); padding:8px 10px; border-radius:8px; }
-.creator-info { display:flex; flex-direction:column; line-height:1.05; }
-.creator-line1 { font-size:11px; opacity:.85; letter-spacing:.6px; }
-.creator-name { font-size:16px; font-weight:700; margin-top:2px; }
-.creator-sub { font-size:11px; opacity:.9; margin-top:4px; }
-@media (max-width:600px) { .creator-card{ min-width:180px; max-width:100%; padding:8px } .creator-avatar{ width:48px; height:48px; min-width:48px; border-radius:10px } .creator-name{ font-size:14px } }
+/* Creator Card - Advanced 3D Design with Glassmorphism */
+.creator-card {
+  display: inline-block;
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0f172a 0%, #0ea5a0 100%);
+  color: #fff;
+  box-shadow: 
+    0 8px 32px rgba(2, 6, 23, 0.45),
+    0 2px 8px rgba(14, 165, 160, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+  margin: 12px;
+  min-width: 220px;
+  max-width: 320px;
+  position: relative;
+  perspective: 1000px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* Glow effect layer */
+.creator-card-glow {
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    135deg,
+    rgba(14, 165, 160, 0.6),
+    rgba(37, 99, 235, 0.4),
+    rgba(14, 165, 160, 0.6)
+  );
+  border-radius: 18px;
+  opacity: 0;
+  filter: blur(12px);
+  transition: opacity 0.4s ease;
+  z-index: -1;
+}
+
+/* Hover effects with 3D transform */
+.creator-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 
+    0 16px 48px rgba(2, 6, 23, 0.6),
+    0 4px 16px rgba(14, 165, 160, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.creator-card:hover .creator-card-glow {
+  opacity: 1;
+}
+
+/* Active/pressed state */
+.creator-card:active {
+  transform: translateY(-2px) scale(1.01);
+}
+
+/* Inner container with glassmorphism */
+.creator-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Avatar with 3D layering */
+.creator-avatar {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.12) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Avatar glow effect */
+.avatar-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.creator-card:hover .creator-avatar {
+  transform: rotateY(5deg) rotateX(-3deg) scale(1.05);
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.creator-card:hover .avatar-glow {
+  opacity: 1;
+}
+
+/* Initials with gradient text */
+.creator-initials {
+  font-weight: 700;
+  font-size: 22px;
+  background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.85) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 1;
+  transition: transform 0.3s ease;
+}
+
+.creator-card:hover .creator-initials {
+  transform: scale(1.1);
+}
+
+/* Info section */
+.creator-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  gap: 2px;
+}
+
+.creator-line1 {
+  font-size: 11px;
+  opacity: 0.85;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.creator-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.3px;
+}
+
+.creator-sub {
+  font-size: 11px;
+  opacity: 0.9;
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .creator-card {
+    min-width: 180px;
+    max-width: 100%;
+    padding: 10px;
+  }
+  
+  .creator-inner {
+    padding: 8px;
+  }
+  
+  .creator-avatar {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 12px;
+  }
+  
+  .creator-initials {
+    font-size: 18px;
+  }
+  
+  .creator-name {
+    font-size: 16px;
+  }
+}
+
+/* Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .creator-card,
+  .creator-card-glow,
+  .creator-avatar,
+  .avatar-glow,
+  .creator-initials {
+    transition: none;
+  }
+  
+  .creator-card:hover {
+    transform: none;
+  }
+  
+  .creator-card:hover .creator-avatar {
+    transform: none;
+  }
+  
+  .creator-card:hover .creator-initials {
+    transform: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .creator-card {
+    border: 2px solid currentColor;
+  }
+  
+  .creator-inner {
+    border: 1px solid currentColor;
+  }
+}
+
