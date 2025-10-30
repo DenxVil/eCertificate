@@ -9,19 +9,23 @@ WORKDIR /app
 # - poppler-utils: Required by pdf2image
 # - libgl1: Required by opencv-python
 # - libglib2.0-0: Required by opencv-python
-RUN apt-get update && apt-get install -y \
+# Clean up apt cache to reduce image size
+RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     poppler-utils \
     libgl1 \
     libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Copy the requirements file into the container at /app
 COPY requirements.txt .
 
 # Install any needed packages specified in requirements.txt
 # Use --no-cache-dir to reduce image size
-RUN pip install --no-cache-dir -r requirements.txt
+# Use --upgrade pip for latest version
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application's code into the container at /app
 COPY . .
@@ -31,8 +35,9 @@ EXPOSE 8000
 
 # Define environment variable
 ENV FLASK_APP=app.py
+ENV PYTHONUNBUFFERED=1
 
 # Run the application using Gunicorn
 # Gunicorn is a production-ready WSGI server
 # Use factory pattern with --preload for better startup
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "120", "app:create_app()"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:create_app()"]

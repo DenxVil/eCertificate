@@ -1,0 +1,56 @@
+# Docker Compose configuration with PostgreSQL instead of MongoDB
+# Usage: docker compose -f docker-compose.postgres.yml up --build
+#
+# NOTE: This requires code changes to use SQLAlchemy instead of PyMongo
+# See DATABASE_OPTIONS.md for migration instructions
+
+version: "3.9"
+services:
+  app:
+    build: .
+    command: gunicorn --bind 0.0.0.0:8000 "app:create_app()" --workers 3
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ecertificate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ecertificate
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data:
+  pgadmin-data:

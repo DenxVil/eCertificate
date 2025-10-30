@@ -1,0 +1,55 @@
+# Docker Compose configuration with MySQL instead of MongoDB
+# Usage: docker compose -f docker-compose.mysql.yml up --build
+#
+# NOTE: This requires code changes to use SQLAlchemy instead of PyMongo
+# See DATABASE_OPTIONS.md for migration instructions
+
+version: "3.9"
+services:
+  app:
+    build: .
+    command: gunicorn --bind 0.0.0.0:8000 "app:create_app()" --workers 3
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=mysql+pymysql://root:rootpassword@mysql:3306/ecertificate
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ecertificate
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: phpMyAdmin for database management
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+
+volumes:
+  mysql-data:

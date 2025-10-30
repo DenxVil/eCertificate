@@ -1,13 +1,14 @@
 Flask
-Flask-PyMongo
+Flask-SQLAlchemy
 Flask-Mail
+Flask-Compress
+Flask-Caching
 python-dotenv
 Pillow
 pandas
 openpyxl
 python-telegram-bot
 gunicorn
-dnspython
 reportlab
 qrcode
 pytesseract

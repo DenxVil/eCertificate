@@ -16,11 +16,13 @@ A powerful web application for generating and distributing digital certificates 
 ## Technology Stack
 
 - **Backend**: Flask (Python 3.8+)
-- **Database**: SQLAlchemy with SQLite
+- **Database**: SQLite (file-based, zero configuration) - see [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for alternatives
 - **Certificate Generation**: Pillow (PIL)
 - **Email**: Flask-Mail (SMTP)
 - **Bot**: python-telegram-bot
 - **Data Processing**: Pandas, openpyxl
+
+> **Note:** SQLite is the default database (no setup required). For production or advanced use cases, you can use PostgreSQL, MySQL, or MongoDB. See [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for detailed information on alternative databases and migration guides.
 
 ## Installation
 
@@ -58,7 +60,7 @@ pip install -r requirements.txt
 Create a `.env` file in the root directory:
 
 ```bash
-cp .env.sample .env
+cp .env.example .env
 ```
 
 Edit the `.env` file with your settings:
@@ -68,8 +70,8 @@ Edit the `.env` file with your settings:
 SECRET_KEY=your-secret-key-here-change-in-production
 FLASK_ENV=development
 
-# Database
-DATABASE_URL=sqlite:///certificates.db
+# Database (SQLite - no setup needed, file-based)
+DATABASE_URL=sqlite:///ecertificate.db
 
 # Mail Configuration (Gmail example)
 MAIL_SERVER=smtp.gmail.com
@@ -245,7 +247,9 @@ Notes
 
 ## Local development with Docker Compose
 
-To run the application together with MongoDB locally, use Docker Compose:
+### Using SQLite (Default)
+
+To run the application with SQLite (no external database needed):
 
 1. Copy environment example:
 
@@ -253,13 +257,25 @@ To run the application together with MongoDB locally, use Docker Compose:
    cp .env.example .env
    ```
 
-2. Start services:
+2. Start the application:
 
    ```bash
    docker compose up --build
    ```
 
-The app will be available at http://localhost:8000 and the MongoDB service is available at mongodb://mongo:27017 inside the app container (or at localhost:27017 on the host).
+The app will be available at http://localhost:8000 with a file-based SQLite database.
+
+### Using Alternative Databases
+
+The application supports multiple database backends. See [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for detailed information.
+
+**Quick Start with Alternatives:**
+
+- **PostgreSQL:** `docker compose -f docker-compose.postgres.yml up --build`
+- **MySQL:** `docker compose -f docker-compose.mysql.yml up --build`
+- **Hybrid (PostgreSQL + Redis):** `docker compose -f docker-compose.hybrid.yml up --build`
+
+**Note:** The codebase now uses SQLite by default. For MongoDB or other databases, see [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for migration instructions.
 
 
 ## Customization
@@ -286,11 +302,21 @@ Email templates can be customized in `app/utils/email_sender.py`. Modify the `se
 
 ### Database Issues
 
-If you encounter database errors, try deleting the database file and restarting:
+If you need to reset the SQLite database:
 
 ```bash
-rm certificates.db
+# Remove the database file
+rm ecertificate.db
+
+# Restart the application (it will create a new database)
 python app.py
+```
+
+For Docker:
+```bash
+# Remove the volume
+docker compose down -v
+docker compose up -d
 ```
 
 ### Email Not Sending

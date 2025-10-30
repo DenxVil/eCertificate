@@ -1,9 +1,10 @@
 """Main Flask application initialization."""
 from flask import Flask, jsonify
-from flask_pymongo import PyMongo
-from config import config
+from flask_compress import Compress
+from app.models.sqlite_models import db
+import config as config_module
 from app.utils.email_sender import mail
-from app.config.mongo_config import get_mongo_uri
+from app.config.db_config import get_database_uri
 import os
 import logging
 
@@ -11,7 +12,9 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-mongo = PyMongo()
+# Initialize Flask-Compress for response compression
+compress = Compress()
+
 
 def create_app(config_name='default'):
     """Create and configure the Flask application.
@@ -25,27 +28,37 @@ def create_app(config_name='default'):
     app = Flask(__name__)
     
     # Load configuration
-    app.config.from_object(config[config_name])
+    app.config.from_object(config_module.config[config_name])
     
-    # Use env var for MongoDB URI
-    try:
-        app.config["MONGO_URI"] = get_mongo_uri()
-    except RuntimeError as e:
-        logger.warning(f"MongoDB URI not configured: {e}")
-        logger.warning("App will continue without database functionality")
+    # Use SQLite database
+    app.config["SQLALCHEMY_DATABASE_URI"] = get_database_uri()
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,  # Verify connections before using
+        "pool_recycle": 300,    # Recycle connections after 5 minutes
+    }
     
-    # Optional: Increase timeouts to allow MongoDB cold starts during compose up
-    app.config["MONGO_CONNECT_TIMEOUT_MS"] = 20000
-    app.config["MONGO_SOCKET_TIMEOUT_MS"] = 20000
+    # Enable response compression
+    app.config["COMPRESS_MIMETYPES"] = [
+        'text/html', 'text/css', 'text/xml', 'application/json',
+        'application/javascript'
+    ]
+    app.config["COMPRESS_LEVEL"] = 6
+    app.config["COMPRESS_MIN_SIZE"] = 500
+    compress.init_app(app)
     
-    # Initialize extensions
-    try:
-        mongo.init_app(app)
-        logger.info("MongoDB connection initialized successfully")
-    except Exception as e:
-        logger.warning(f"MongoDB initialization failed: {e}")
-        logger.warning("App will continue without database functionality")
+    # Initialize database
+    db.init_app(app)
     
+    # Create tables if they don't exist
+    with app.app_context():
+        try:
+            db.create_all()
+            logger.info("Database tables created successfully")
+        except Exception as e:
+            logger.error(f"Failed to create database tables: {e}")
+    
+    # Initialize mail
     try:
         mail.init_app(app)
         logger.info("Mail configuration initialized successfully")
@@ -70,6 +83,16 @@ def create_app(config_name='default'):
     app.register_blueprint(events_bp, url_prefix='/events')
     app.register_blueprint(jobs_bp, url_prefix='/jobs')
     
+    # Add security headers
+    @app.after_request
+    def add_security_headers(response):
+        """Add security headers to all responses."""
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        return response
+    
     # Global error handlers
     @app.errorhandler(404)
     def not_found(error):
@@ -79,6 +102,12 @@ def create_app(config_name='default'):
     def internal_error(error):
         logger.error(f"Internal server error: {error}")
         return jsonify({'error': 'Internal server error'}), 500
+    
+    @app.errorhandler(RuntimeError)
+    def handle_runtime_error(err):
+        """Handle RuntimeError (e.g., database unavailable) with 503."""
+        logger.error(f"Runtime error: {err}")
+        return (str(err), 503)
     
     logger.info(f"Flask app created successfully with config: {config_name}")
     return app

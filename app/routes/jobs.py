@@ -1,12 +1,10 @@
 """Job management routes."""
 from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, flash
-from app import mongo
-from app.models.mongo_models import Event, Job, Participant
+from app.models.sqlite_models import db, Event, Job, Participant
 from app.utils import parse_csv_file, parse_excel_file, save_uploaded_file
 from app.utils.certificate_generator import CertificateGenerator
 from app.utils.email_sender import send_certificate_email
 from datetime import datetime
-from bson.objectid import ObjectId
 import os
 import threading
 import json
@@ -32,13 +30,13 @@ def process_job(app, job_id, customization_json=None):
         try:
             Job.update_status(job_id, 'processing')
             
-            event = Event.find_by_id(job['event_id'])
+            event = Event.find_by_id(job.event_id)
             if not event:
                 raise ValueError("Event not found")
             
             participants = Participant.find_by_job(job_id)
             
-            tpl = event.get('template_path')
+            tpl = event.template_path
             if not tpl:
                 raise ValueError("Event template not found")
 
@@ -67,53 +65,64 @@ def process_job(app, job_id, customization_json=None):
                         for field in customization:
                             text = field['text']
                             if text == 'participant_name':
-                                text = participant['name']
+                                text = participant.name
                             elif text == 'event_name':
-                                text = event['name']
+                                text = event.name
                             elif text == 'date':
                                 text = datetime.now().strftime("%B %d, %Y")
                             fields.append({**field, 'text': text})
                         cert_path = generator.generate(fields)
                     else:
                         cert_path = generator.generate_certificate(
-                            participant_name=participant['name'],
-                            event_name=event['name']
+                            participant_name=participant.name,
+                            event_name=event.name
                         )
                     
                     cert_filename = os.path.basename(cert_path)
                     
                     email_sent = send_certificate_email(
-                        recipient_email=participant['email'],
-                        recipient_name=participant['name'],
-                        event_name=event['name'],
+                        recipient_email=participant.email,
+                        recipient_name=participant.name,
+                        event_name=event.name,
                         certificate_path=cert_path
                     )
                     
-                    Participant.update_certificate(participant['_id'], cert_filename, email_sent)
+                    Participant.update_certificate(participant.id, cert_filename, email_sent)
                     Job.increment_generated(job_id)
                     
                 except Exception as e:
                     tb = _tb.format_exc()
-                    print(f"Error processing participant {participant.get('name')}: {str(e)}\n{tb}")
+                    logger.error(f"Error processing participant {participant.name}: {str(e)}\n{tb}")
             
             Job.update_status(job_id, 'completed')
 
         except Exception as e:
             tb = _tb.format_exc()
             Job.update_status(job_id, 'failed', error_message=f"{str(e)}\n{tb}")
-            print(f"Job {job_id} failed: {str(e)}\n{tb}")
+            logger.error(f"Job {job_id} failed: {str(e)}\n{tb}")
 
 
 @jobs_bp.route('/')
 def list_jobs():
-    """List all jobs."""
-    jobs_cursor = mongo.db.jobs.find().sort('created_at', -1)
-    jobs_list = []
-    for job in jobs_cursor:
-        event = Event.find_by_id(job['event_id'])
-        job['event_name'] = event['name'] if event else 'Unknown Event'
-        jobs_list.append(job)
-    return render_template('jobs/list.html', jobs=jobs_list)
+    """List all jobs with pagination."""
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    # Limit per_page to prevent abuse
+    per_page = min(per_page, 100)
+    
+    jobs_pagination = Job.query.order_by(Job.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    jobs_list = jobs_pagination.items
+    for job in jobs_list:
+        event = Event.find_by_id(job.event_id)
+        job.event_name = event.name if event else 'Unknown Event'
+    
+    return render_template('jobs/list.html', 
+                         jobs=jobs_list,
+                         pagination=jobs_pagination)
 
 
 @jobs_bp.route('/create', methods=['GET', 'POST'])
@@ -150,7 +159,7 @@ def create_job():
             job_id = Job.create(event_id)
             
             participants_to_insert = [
-                {"job_id": ObjectId(job_id), "name": p['name'], "email": p['email'], "created_at": datetime.utcnow()}
+                {"job_id": job_id, "name": p['name'], "email": p['email']}
                 for p in participants_data
             ]
             if participants_to_insert:
@@ -186,10 +195,10 @@ def view_job(job_id):
         flash('Job not found.', 'error')
         return redirect(url_for('jobs.list_jobs'))
         
-    event = Event.find_by_id(job['event_id'])
+    event = Event.find_by_id(job.event_id)
     participants = Participant.find_by_job(job_id)
     
-    job['event_name'] = event['name'] if event else 'Unknown'
+    job.event_name = event.name if event else 'Unknown'
     
     return render_template('jobs/view.html', job=job, participants=participants)
 
@@ -202,10 +211,10 @@ def job_status(job_id):
         return jsonify({'error': 'Job not found'}), 404
     
     return jsonify({
-        'status': job.get('status'),
-        'total': job.get('total_certificates'),
-        'generated': job.get('generated_certificates'),
-        'error': job.get('error_message')
+        'status': job.status,
+        'total': job.total_certificates,
+        'generated': job.generated_certificates,
+        'error': job.error_message
     })
 
 

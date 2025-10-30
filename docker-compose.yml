@@ -6,26 +6,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MONGO_URI=mongodb://mongo:27017/eCertificate
-    depends_on:
-      mongo:
-        condition: service_healthy
+      # SQLite database (file-based, no separate service needed)
+      - DATABASE_URL=sqlite:///ecertificate.db
     volumes:
       - ./:/app
+      # Persist SQLite database
+      - sqlite-data:/app/ecertificate.db
     restart: unless-stopped
-
-  mongo:
-    image: mongo:6.0
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
 volumes:
-  mongo-data:
+  sqlite-data:
