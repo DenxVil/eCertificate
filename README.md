@@ -171,6 +171,75 @@ Alice Johnson,alice@example.com
 - `/status <job_id>` - Check the status of a job
 - `/help` - Show help information
 
+### GOONJ Certificate Generation API
+
+The `/goonj/generate` endpoint allows single certificate generation with participant data.
+
+**Endpoint:** `POST /goonj/generate`
+
+**Supported Input Formats:**
+
+1. **JSON Body**
+```bash
+curl -X POST http://localhost:5000/goonj/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "event": "GOONJ 2024",
+    "date": "October 30, 2024"
+  }' \
+  --output certificate.png
+```
+
+2. **Form Fields**
+```bash
+curl -X POST http://localhost:5000/goonj/generate \
+  -F "name=John Doe" \
+  -F "email=john@example.com" \
+  -F "event=GOONJ 2024" \
+  -F "date=October 30, 2024" \
+  -F "format=png" \
+  --output certificate.png
+```
+
+3. **CSV File Upload**
+```bash
+curl -X POST http://localhost:5000/goonj/generate \
+  -F "file=@participants.csv" \
+  -F "format=pdf" \
+  --output certificate.pdf
+```
+
+4. **CSV Text**
+```bash
+curl -X POST http://localhost:5000/goonj/generate \
+  -F "csv_text=name,email,event
+John Doe,john@example.com,GOONJ 2024" \
+  --output certificate.png
+```
+
+**Parameters:**
+- `name` (required): Participant name
+- `email` (optional): Participant email (certificate will be emailed if SMTP is configured)
+- `event` (optional): Event name (default: "GOONJ")
+- `date` (optional): Event date (default: current date)
+- `format` (optional): Output format - `png` or `pdf` (default: `png`)
+
+**Response:**
+- Success: Returns the generated certificate file (PNG or PDF)
+- Error: Returns JSON with error message
+
+**Check GOONJ Status:**
+```bash
+curl http://localhost:5000/goonj/status
+```
+
+**Notes:**
+- If `email` is provided and SMTP is configured, the certificate will be automatically emailed to the participant
+- The GOONJ template must exist at `templates/goonj_certificate.png`
+- Generated certificates are saved in the `OUTPUT_FOLDER` directory
+
 ### Using the Telegram Bot
 
 1. Open Telegram and search for your bot
