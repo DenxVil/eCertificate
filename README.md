@@ -2,6 +2,8 @@
 
 A powerful web application for generating and distributing digital certificates with email delivery and Telegram bot integration.
 
+> **🌐 [View Live Demo](https://denxvil.github.io/eCertificate/)** - Check out our GitHub Pages site!
+
 ## Features
 
 - ✅ **Custom Certificate Templates**: Upload your own certificate designs (PNG, JPG, SVG)
@@ -212,6 +214,18 @@ eCertificate/
 ```
 
 ## Deploying
+
+### GitHub Pages (Documentation & Landing Page)
+
+The project includes a static landing page deployed to GitHub Pages:
+
+- **Live Site**: [https://denxvil.github.io/eCertificate/](https://denxvil.github.io/eCertificate/)
+- **Automatic Deployment**: The `.github/workflows/deploy-pages.yml` workflow automatically deploys the `docs/` folder to GitHub Pages on every push to `main`
+- **Static Content**: The landing page showcases project features, installation instructions, and documentation
+
+> **Note**: GitHub Pages hosts the static landing page only. The full Flask application requires deployment to a platform that supports backend applications (like Azure, Heroku, or a VPS).
+
+### Azure Deployment (Full Application)
 
 There are two simple ways to deploy this project to Azure:
 
