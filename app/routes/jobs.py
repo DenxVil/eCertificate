@@ -94,14 +94,14 @@ def process_job(app, job_id, customization_json=None):
                     
                 except Exception as e:
                     tb = _tb.format_exc()
-                    print(f"Error processing participant {participant.get('name')}: {str(e)}\n{tb}")
+                    logger.error(f"Error processing participant {participant.get('name')}: {str(e)}\n{tb}")
             
             Job.update_status(job_id, 'completed')
 
         except Exception as e:
             tb = _tb.format_exc()
             Job.update_status(job_id, 'failed', error_message=f"{str(e)}\n{tb}")
-            print(f"Job {job_id} failed: {str(e)}\n{tb}")
+            logger.error(f"Job {job_id} failed: {str(e)}\n{tb}")
 
 
 @jobs_bp.route('/')

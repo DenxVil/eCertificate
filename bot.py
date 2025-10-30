@@ -30,7 +30,8 @@ flask_app = create_app()
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command."""
-    welcome_message = """
+    try:
+        welcome_message = """
 🎓 *Welcome to Denx Certificate Generator Bot!* 🎓
 
 I can help you generate and send certificates to participants.
@@ -44,7 +45,9 @@ I can help you generate and send certificates to participants.
 
 To get started, use /newjob to create a new certificate generation job!
     """
-    await update.message.reply_text(welcome_message, parse_mode='Markdown')
+        await update.message.reply_text(welcome_message, parse_mode='Markdown')
+    except Exception as e:
+        await update.message.reply_text(f"Error: {str(e)}")
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -68,44 +71,51 @@ Use /status <job_id> to check the progress of your certificate generation job.
 
 async def events_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /events command - list all events."""
-    with flask_app.app_context():
-        events = Event.find_all()
-        
-        if not events:
-            await update.message.reply_text("No events available. Please create an event first.")
-            return
-        
-        message = "*Available Events:*\n\n"
-        for i, event in enumerate(events):
-            message += f"*{i + 1}.* {event['name']}\n"
-            if event.get('description'):
-                message += f"   _{event['description']}_\n"
-            message += "\n"
-        
-        await update.message.reply_text(message, parse_mode='Markdown')
+    try:
+        with flask_app.app_context():
+            events = Event.find_all()
+            
+            if not events:
+                await update.message.reply_text("No events available. Please create an event first.")
+                return
+            
+            message = "*Available Events:*\n\n"
+            for i, event in enumerate(events):
+                message += f"*{i + 1}.* {event['name']}\n"
+                if event.get('description'):
+                    message += f"   _{event['description']}_\n"
+                message += "\n"
+            
+            await update.message.reply_text(message, parse_mode='Markdown')
+    except Exception as e:
+        await update.message.reply_text(f"Error fetching events: {str(e)}")
 
 
 async def newjob_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /newjob command - start new job creation."""
-    with flask_app.app_context():
-        events = Event.find_all()
-        
-        if not events:
-            await update.message.reply_text(
-                "No events available. Please create an event through the web interface first."
-            )
-            return ConversationHandler.END
-        
-        context.user_data['events_list'] = [{'_id': str(e['_id']), 'name': e['name']} for e in events]
+    try:
+        with flask_app.app_context():
+            events = Event.find_all()
+            
+            if not events:
+                await update.message.reply_text(
+                    "No events available. Please create an event through the web interface first."
+                )
+                return ConversationHandler.END
+            
+            context.user_data['events_list'] = [{'_id': str(e['_id']), 'name': e['name']} for e in events]
 
-        message = "*Select an event for certificate generation:*\n\n"
-        for i, event in enumerate(events):
-            message += f"{i + 1}. {event['name']}\n"
-        
-        message += "\nReply with the event number:"
-        
-        await update.message.reply_text(message, parse_mode='Markdown')
-        return SELECTING_EVENT
+            message = "*Select an event for certificate generation:*\n\n"
+            for i, event in enumerate(events):
+                message += f"{i + 1}. {event['name']}\n"
+            
+            message += "\nReply with the event number:"
+            
+            await update.message.reply_text(message, parse_mode='Markdown')
+            return SELECTING_EVENT
+    except Exception as e:
+        await update.message.reply_text(f"Error starting job: {str(e)}")
+        return ConversationHandler.END
 
 
 async def select_event(update: Update, context: ContextTypes.DEFAULT_TYPE):

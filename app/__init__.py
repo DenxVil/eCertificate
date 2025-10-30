@@ -29,10 +29,12 @@ def create_app(config_name='default'):
     # Initialize extensions
     try:
         mongo.init_app(app)
-        logger.info("MongoDB connection initialized successfully")
+        # Test database connection - fail fast if DB is unavailable
+        mongo.cx.admin.command('ping')
+        logger.info("MongoDB connection initialized and verified successfully")
     except Exception as e:
-        logger.warning(f"MongoDB initialization failed: {e}")
-        logger.warning("App will continue without database functionality")
+        logger.error(f"MongoDB initialization or connection failed: {e}")
+        raise RuntimeError(f"Database connection failed: {e}. Application cannot start without database.")
     
     try:
         mail.init_app(app)

@@ -254,7 +254,14 @@ function handleFileUpload(file) {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.error || 'Server error');
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             scannedData = data;
@@ -265,7 +272,7 @@ function handleFileUpload(file) {
         }
     })
     .catch(error => {
-        alert('Error uploading template: ' + error);
+        alert('Error uploading template: ' + error.message);
         location.reload();
     });
 }
@@ -319,6 +326,12 @@ document.getElementById('generateBtn').addEventListener('click', () => {
         }
     });
     
+    // Show loading state
+    const generateBtn = document.getElementById('generateBtn');
+    const originalBtnText = generateBtn.textContent;
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<span class="loading"></span> Generating...';
+    
     // Generate certificate
     fetch('/smart-certificate/generate', {
         method: 'POST',
@@ -330,22 +343,30 @@ document.getElementById('generateBtn').addEventListener('click', () => {
             fields: fieldValues
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.error || 'Server error');
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
+            // Show step 4
+            setStep(4);
+            document.getElementById('fields-section').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
             displayGeneratedCertificate(data);
         } else {
-            alert('Error generating certificate: ' + (data.error || 'Unknown error'));
+            throw new Error(data.error || 'Unknown error');
         }
     })
     .catch(error => {
-        alert('Error generating certificate: ' + error);
+        alert('Error generating certificate: ' + error.message);
+        generateBtn.disabled = false;
+        generateBtn.textContent = originalBtnText;
     });
-    
-    // Show step 4
-    setStep(4);
-    document.getElementById('fields-section').style.display = 'none';
-    document.getElementById('result-section').style.display = 'block';
 });
 
 function displayGeneratedCertificate(data) {
