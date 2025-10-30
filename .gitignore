@@ -142,3 +142,7 @@ AzureCLI.zip
 # Temporary files
 *.tmp
 *.temp
+
+# Generated certificates
+generated_certificates/
+uploads/
