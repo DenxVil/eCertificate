@@ -3,6 +3,7 @@ from datetime import datetime
 from app import mongo
 from bson.objectid import ObjectId
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +104,6 @@ class Event:
             return
         
         # Delete template file if exists
-        import os
         if event.get('template_path') and os.path.exists(event['template_path']):
             try:
                 os.remove(event['template_path'])

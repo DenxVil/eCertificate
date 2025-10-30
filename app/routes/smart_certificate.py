@@ -6,7 +6,6 @@ from app.models.mongo_models import Scan
 import os
 import logging
 from datetime import datetime
-import pickle
 
 smart_cert_bp = Blueprint('smart_certificate', __name__)
 logger = logging.getLogger(__name__)
