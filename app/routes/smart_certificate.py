@@ -2,15 +2,14 @@
 from flask import Blueprint, render_template, request, jsonify, current_app, send_file
 from app.utils.certificate_scanner import CertificateScanner, SmartCertificateAligner
 from app.utils import allowed_file, save_uploaded_file
+from app.models.mongo_models import Scan
 import os
 import logging
 from datetime import datetime
+import pickle
 
 smart_cert_bp = Blueprint('smart_certificate', __name__)
 logger = logging.getLogger(__name__)
-
-# Store scanned data temporarily (in production, use Redis or database)
-scanned_templates = {}
 
 
 @smart_cert_bp.route('/')
@@ -52,38 +51,43 @@ def scan_template():
         scanner = CertificateScanner(dpi=300)
         analysis = scanner.scan_certificate(template_path)
         
-        # Store the analysis (use session ID or database in production)
+        # Store the analysis in database
         session_id = f"scan_{datetime.now().timestamp()}"
-        scanned_templates[session_id] = {
-            'analysis': analysis,
-            'template_path': template_path
+        
+        # Serialize analysis data for storage
+        analysis_data = {
+            'detected_fields': [
+                {
+                    'text': field.text,
+                    'x': field.x,
+                    'y': field.y,
+                    'width': field.width,
+                    'height': field.height,
+                    'font_size': field.font_size,
+                    'color': field.color,
+                    'alignment': field.alignment,
+                    'confidence': field.confidence,
+                    'field_type': field.field_type
+                }
+                for field in analysis.detected_fields
+            ],
+            'confidence_score': analysis.confidence_score,
+            'width': analysis.width,
+            'height': analysis.height
         }
         
-        # Convert detected fields to JSON-serializable format
-        fields = [
-            {
-                'text': field.text,
-                'x': field.x,
-                'y': field.y,
-                'width': field.width,
-                'height': field.height,
-                'font_size': field.font_size,
-                'color': field.color,
-                'alignment': field.alignment,
-                'confidence': field.confidence,
-                'field_type': field.field_type
-            }
-            for field in analysis.detected_fields
-        ]
+        # Store in database with TTL
+        Scan.create(session_id, analysis_data, template_path)
         
+        # Return response
         return jsonify({
             'success': True,
             'session_id': session_id,
             'template_path': template_path,
-            'fields': fields,
-            'confidence': analysis.confidence_score,
-            'width': analysis.width,
-            'height': analysis.height
+            'fields': analysis_data['detected_fields'],
+            'confidence': analysis_data['confidence_score'],
+            'width': analysis_data['width'],
+            'height': analysis_data['height']
         })
     
     except Exception as e:
@@ -106,15 +110,39 @@ def generate_certificate():
         if not template_path:
             return jsonify({'success': False, 'error': 'Template path not provided'}), 400
         
-        # Find the scanned analysis
-        analysis = None
-        for session_data in scanned_templates.values():
-            if session_data['template_path'] == template_path:
-                analysis = session_data['analysis']
-                break
+        # Retrieve scan data from database
+        scan_data = Scan.find_by_template_path(template_path)
         
-        if not analysis:
+        if not scan_data:
             return jsonify({'success': False, 'error': 'Template analysis not found. Please rescan the template.'}), 404
+        
+        # Reconstruct analysis object from stored data
+        from app.utils.certificate_scanner import TemplateAnalysis, DetectedField
+        
+        analysis_dict = scan_data['analysis_data']
+        detected_fields = [
+            DetectedField(
+                text=f['text'],
+                x=f['x'],
+                y=f['y'],
+                width=f['width'],
+                height=f['height'],
+                font_size=f['font_size'],
+                color=f['color'],
+                alignment=f['alignment'],
+                confidence=f['confidence'],
+                field_type=f['field_type']
+            )
+            for f in analysis_dict['detected_fields']
+        ]
+        
+        analysis = TemplateAnalysis(
+            width=analysis_dict['width'],
+            height=analysis_dict['height'],
+            dpi=300,
+            detected_fields=detected_fields,
+            confidence_score=analysis_dict['confidence_score']
+        )
         
         # Generate certificate
         aligner = SmartCertificateAligner(analysis)

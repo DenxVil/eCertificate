@@ -122,10 +122,7 @@ def delete_event(event_id):
         flash('Event not found', 'error')
         return redirect(url_for('events.list_events'))
     
-    # Delete template file if exists
-    if event.get('template_path') and os.path.exists(event['template_path']):
-        os.remove(event['template_path'])
-    
+    # Delete event and all associated data (including template file)
     Event.delete(event_id)
     
     flash('Event deleted successfully!', 'success')
@@ -136,12 +133,36 @@ def delete_event(event_id):
 @events_bp.route('/api', methods=['GET'])
 def api_list_events():
     """API endpoint to list all events."""
-    events = Event.query.all()
-    return jsonify([event.to_dict() for event in events])
+    try:
+        events = Event.find_all()
+        # Convert ObjectId to string for JSON serialization
+        events_data = []
+        for event in events:
+            event_dict = dict(event)
+            event_dict['_id'] = str(event_dict['_id'])
+            if 'created_at' in event_dict:
+                event_dict['created_at'] = event_dict['created_at'].isoformat()
+            events_data.append(event_dict)
+        return jsonify(events_data)
+    except Exception as e:
+        logger.error(f"Error in API list events: {e}")
+        return jsonify({'error': 'Failed to fetch events'}), 500
 
 
-@events_bp.route('/api/<int:event_id>', methods=['GET'])
+@events_bp.route('/api/<event_id>', methods=['GET'])
 def api_get_event(event_id):
     """API endpoint to get a specific event."""
-    event = Event.query.get_or_404(event_id)
-    return jsonify(event.to_dict())
+    try:
+        event = Event.find_by_id(event_id)
+        if not event:
+            return jsonify({'error': 'Event not found'}), 404
+        
+        # Convert ObjectId to string for JSON serialization
+        event_dict = dict(event)
+        event_dict['_id'] = str(event_dict['_id'])
+        if 'created_at' in event_dict:
+            event_dict['created_at'] = event_dict['created_at'].isoformat()
+        return jsonify(event_dict)
+    except Exception as e:
+        logger.error(f"Error in API get event: {e}")
+        return jsonify({'error': 'Failed to fetch event'}), 500
