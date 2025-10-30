@@ -1,0 +1,10 @@
+.creator-card { display:inline-block; padding:10px; border-radius:12px; background:linear-gradient(135deg,#0f172a 0%,#0ea5a0 100%); color:#fff; box-shadow:0 8px 24px rgba(2,6,23,0.45); font-family:Inter,Segoe UI,Roboto,Arial,sans-serif; margin:12px; min-width:220px; max-width:320px; transition:transform .18s ease,box-shadow .18s ease; }
+.creator-card:hover { transform:translateY(-4px) scale(1.01); box-shadow:0 12px 36px rgba(2,6,23,0.55); }
+.creator-inner { display:flex; align-items:center; gap:12px; }
+.creator-avatar { width:56px; height:56px; min-width:56px; border-radius:12px; background:linear-gradient(135deg,#fff3 0%,#ffffff22 100%); display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid rgba(255,255,255,0.08); }
+.creator-initials { font-weight:700; font-size:20px; color:#04122a; background:linear-gradient(90deg,#fffb 0,#fff0 100%); padding:8px 10px; border-radius:8px; }
+.creator-info { display:flex; flex-direction:column; line-height:1.05; }
+.creator-line1 { font-size:11px; opacity:.85; letter-spacing:.6px; }
+.creator-name { font-size:16px; font-weight:700; margin-top:2px; }
+.creator-sub { font-size:11px; opacity:.9; margin-top:4px; }
+@media (max-width:600px) { .creator-card{ min-width:180px; max-width:100%; padding:8px } .creator-avatar{ width:48px; height:48px; min-width:48px; border-radius:10px } .creator-name{ font-size:14px } }

@@ -9,9 +9,42 @@ import os
 import threading
 import json
 import logging
+import io
+import csv
 
 jobs_bp = Blueprint('jobs', __name__)
 logger = logging.getLogger(__name__)
+
+
+def parse_participants_from_file(file_storage):
+    """Parse participants from uploaded CSV file."""
+    try:
+        # TextIOWrapper handles streaming file storage
+        stream = io.TextIOWrapper(file_storage.stream, encoding="utf-8")
+    except Exception:
+        # Fallback for cases where .stream is not available
+        stream = io.StringIO(file_storage.read().decode("utf-8"))
+    reader = csv.DictReader(stream)
+    participants = []
+    for row in reader:
+        # normalize and trim values
+        cleaned = {k: (v.strip() if isinstance(v, str) else v) for k, v in row.items()}
+        # skip empty rows
+        if any((v for v in cleaned.values() if v not in (None, ""))):
+            participants.append(cleaned)
+    return participants
+
+
+def parse_participants_from_text(csv_text):
+    """Parse participants from CSV text."""
+    stream = io.StringIO(csv_text)
+    reader = csv.DictReader(stream)
+    participants = []
+    for row in reader:
+        cleaned = {k: (v.strip() if isinstance(v, str) else v) for k, v in row.items()}
+        if any((v for v in cleaned.values() if v not in (None, ""))):
+            participants.append(cleaned)
+    return participants
 
 
 def process_job(app, job_id, customization_json=None):
@@ -129,37 +162,81 @@ def list_jobs():
 def create_job():
     """Create a new certificate generation job."""
     if request.method == 'POST':
+        # Log diagnostic information
+        logger.debug("Create job: content-type=%s, form_keys=%s, files=%s",
+                     request.content_type, list(request.form.keys()), list(request.files.keys()))
+        
         event_id = request.form.get('event_id')
+        participants_data = None
+
+        # 1) Try file upload (multipart/form-data) - check both 'participants' and 'participant_file'
+        file_storage = request.files.get('participants') or request.files.get('participant_file')
+        if file_storage and getattr(file_storage, 'filename', ''):
+            try:
+                # Handle CSV files with new robust parser
+                if file_storage.filename.endswith('.csv'):
+                    participants_data = parse_participants_from_file(file_storage)
+                # Handle Excel files with existing parser
+                elif file_storage.filename.endswith(('.xls', '.xlsx')):
+                    participants_data = parse_excel_file(file_storage)
+                else:
+                    flash('Invalid file type. Please upload CSV or Excel.', 'error')
+                    return redirect(request.url)
+            except Exception as e:
+                logger.exception('Failed to parse participants file: %s', e)
+                flash('Failed to parse participants file', 'error')
+                return redirect(request.url)
+
+        # 2) Try CSV text from form field 'participants'
+        if not participants_data and 'participants' in request.form:
+            csv_text = request.form.get('participants', '')
+            if csv_text.strip():
+                try:
+                    participants_data = parse_participants_from_text(csv_text)
+                except Exception as e:
+                    logger.exception('Failed to parse participants form text: %s', e)
+                    flash('Failed to parse participants text', 'error')
+                    return redirect(request.url)
+
+        # 3) Try JSON body with {'participants': [...] }
+        if not participants_data and request.is_json:
+            body = request.get_json(silent=True) or {}
+            if isinstance(body, dict) and 'participants' in body and body['participants']:
+                participants_data = body['participants']
+                # Extract event_id from JSON if not in form
+                if not event_id and 'event_id' in body:
+                    event_id = body['event_id']
+
+        # 4) Check if we have participants data
+        if not participants_data:
+            # For API requests, return JSON error
+            if request.is_json or request.accept_mimetypes.best == 'application/json':
+                return jsonify({
+                    'error': "No participant data provided. Provide multipart/form-data with field 'participants' (CSV file),\n"
+                             "or a form field 'participants' containing CSV text, or a JSON body {\"participants\": [...] }."
+                }), 400
+            # For web forms, flash message and redirect
+            flash('No participant data provided.', 'error')
+            return redirect(request.url)
+        
+        # Check event_id
         if not event_id:
+            if request.is_json or request.accept_mimetypes.best == 'application/json':
+                return jsonify({'error': 'Please provide an event_id.'}), 400
             flash('Please select an event.', 'error')
             return redirect(url_for('jobs.create_job'))
 
-        if 'participant_file' not in request.files:
-            flash('No participant file provided.', 'error')
-            return redirect(request.url)
-            
-        file = request.files['participant_file']
-        if file.filename == '':
-            flash('No selected file.', 'error')
-            return redirect(request.url)
-
         try:
-            if file.filename.endswith('.csv'):
-                participants_data = parse_csv_file(file)
-            elif file.filename.endswith(('.xls', '.xlsx')):
-                participants_data = parse_excel_file(file)
-            else:
-                flash('Invalid file type. Please upload CSV or Excel.', 'error')
-                return redirect(request.url)
-
             if not participants_data:
+                if request.is_json or request.accept_mimetypes.best == 'application/json':
+                    return jsonify({'error': 'No participants found in the data.'}), 400
                 flash('No participants found in the file.', 'error')
                 return redirect(request.url)
 
             job_id = Job.create(event_id)
             
             participants_to_insert = [
-                {"job_id": job_id, "name": p['name'], "email": p['email']}
+                {"job_id": job_id, "name": p.get('name', ''), "email": p.get('email', '')}
                 for p in participants_data
             ]
             if participants_to_insert:
@@ -176,10 +253,17 @@ def create_job():
             thread.daemon = True
             thread.start()
 
+            # Return appropriate response based on request type
+            if request.is_json or request.accept_mimetypes.best == 'application/json':
+                return jsonify({'status': 'ok', 'job_id': str(job_id), 'participants_count': len(participants_to_insert)}), 201
+            
             flash('Job created successfully! Certificates are being generated.', 'success')
             return redirect(url_for('jobs.view_job', job_id=job_id))
 
         except Exception as e:
+            logger.exception('Error creating job: %s', e)
+            if request.is_json or request.accept_mimetypes.best == 'application/json':
+                return jsonify({'error': f'Error creating job: {str(e)}'}), 500
             flash(f'Error processing file: {e}', 'error')
             return redirect(request.url)
 
