@@ -57,7 +57,13 @@ def generate_certificate():
     Accepts participant data in three formats:
     1. CSV file upload (multipart/form-data with 'file' field)
     2. CSV text (form field 'csv_text')
-    3. JSON ({"name": "...", "email": "...", "event": "...", "date": "..."})
+    3. JSON ({"name": "...", "event": "...", "organiser": "..."})
+    
+    Supports three fields:
+    - name (required)
+    - event (optional, default "GOONJ")
+    - organiser or organizer (optional, default "AMA")
+    - email (optional, for delivery only, not rendered)
     
     Returns:
         Generated certificate file (PNG or PDF) or JSON error
@@ -126,16 +132,25 @@ def generate_certificate():
         if name:
             participant_data = {
                 'name': name,
-                'email': request.form.get('email', ''),
                 'event': request.form.get('event', 'GOONJ'),
-                'date': request.form.get('date', ''),
             }
+            # Accept both spellings of organiser/organizer
+            organiser = request.form.get('organiser') or request.form.get('organizer', 'AMA')
+            participant_data['organiser'] = organiser
+            # Keep email for optional delivery, but don't render it
+            email = request.form.get('email')
+            if email:
+                participant_data['email'] = email
     
     # Validate that we have participant data
     if not participant_data:
         return jsonify({
-            'error': 'No participant data provided. Please provide data via CSV file, CSV text, JSON body, or form fields (name, email, event, date).'
+            'error': 'No participant data provided. Please provide data via CSV file, CSV text, JSON body, or form fields (name, event, organiser).'
         }), 400
+    
+    # Normalize organizer -> organiser for backward compatibility
+    if 'organizer' in participant_data and 'organiser' not in participant_data:
+        participant_data['organiser'] = participant_data['organizer']
     
     # Validate required field: name
     if 'name' not in participant_data or not participant_data['name']:
