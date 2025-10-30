@@ -1,9 +1,9 @@
 """Main Flask application initialization."""
 from flask import Flask, jsonify
-from flask_pymongo import PyMongo
-from config import config
+from app.models.sqlite_models import db
+import config as config_module
 from app.utils.email_sender import mail
-from app.config.mongo_config import get_mongo_uri
+from app.config.db_config import get_database_uri
 import os
 import logging
 
@@ -11,7 +11,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-mongo = PyMongo()
 
 def create_app(config_name='default'):
     """Create and configure the Flask application.
@@ -25,27 +24,24 @@ def create_app(config_name='default'):
     app = Flask(__name__)
     
     # Load configuration
-    app.config.from_object(config[config_name])
+    app.config.from_object(config_module.config[config_name])
     
-    # Use env var for MongoDB URI
-    try:
-        app.config["MONGO_URI"] = get_mongo_uri()
-    except RuntimeError as e:
-        logger.warning(f"MongoDB URI not configured: {e}")
-        logger.warning("App will continue without database functionality")
+    # Use SQLite database
+    app.config["SQLALCHEMY_DATABASE_URI"] = get_database_uri()
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     
-    # Optional: Increase timeouts to allow MongoDB cold starts during compose up
-    app.config["MONGO_CONNECT_TIMEOUT_MS"] = 20000
-    app.config["MONGO_SOCKET_TIMEOUT_MS"] = 20000
+    # Initialize database
+    db.init_app(app)
     
-    # Initialize extensions
-    try:
-        mongo.init_app(app)
-        logger.info("MongoDB connection initialized successfully")
-    except Exception as e:
-        logger.warning(f"MongoDB initialization failed: {e}")
-        logger.warning("App will continue without database functionality")
+    # Create tables if they don't exist
+    with app.app_context():
+        try:
+            db.create_all()
+            logger.info("Database tables created successfully")
+        except Exception as e:
+            logger.error(f"Failed to create database tables: {e}")
     
+    # Initialize mail
     try:
         mail.init_app(app)
         logger.info("Mail configuration initialized successfully")

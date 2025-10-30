@@ -1,8 +1,7 @@
 """Event management routes."""
 from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, flash
-from app.models.mongo_models import Event
+from app.models.sqlite_models import Event
 from app.utils import allowed_file, save_uploaded_file
-from bson.objectid import ObjectId
 import os
 import logging
 
@@ -92,9 +91,9 @@ def edit_event(event_id):
         return redirect(url_for('events.list_events'))
     
     if request.method == 'POST':
-        name = request.form.get('name', event['name'])
-        description = request.form.get('description', event['description'])
-        template_path = event['template_path']
+        name = request.form.get('name', event.name)
+        description = request.form.get('description', event.description)
+        template_path = event.template_path
 
         # Handle template upload
         if 'template' in request.files:
@@ -123,8 +122,8 @@ def delete_event(event_id):
         return redirect(url_for('events.list_events'))
     
     # Delete template file if exists
-    if event.get('template_path') and os.path.exists(event['template_path']):
-        os.remove(event['template_path'])
+    if event.template_path and os.path.exists(event.template_path):
+        os.remove(event.template_path)
     
     Event.delete(event_id)
     
@@ -137,11 +136,23 @@ def delete_event(event_id):
 def api_list_events():
     """API endpoint to list all events."""
     events = Event.query.all()
-    return jsonify([event.to_dict() for event in events])
+    return jsonify([{
+        'id': e.id,
+        'name': e.name,
+        'description': e.description,
+        'template_path': e.template_path,
+        'created_at': e.created_at.isoformat() if e.created_at else None
+    } for e in events])
 
 
 @events_bp.route('/api/<int:event_id>', methods=['GET'])
 def api_get_event(event_id):
     """API endpoint to get a specific event."""
     event = Event.query.get_or_404(event_id)
-    return jsonify(event.to_dict())
+    return jsonify({
+        'id': event.id,
+        'name': event.name,
+        'description': event.description,
+        'template_path': event.template_path,
+        'created_at': event.created_at.isoformat() if event.created_at else None
+    })

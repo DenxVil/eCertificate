@@ -16,13 +16,13 @@ A powerful web application for generating and distributing digital certificates 
 ## Technology Stack
 
 - **Backend**: Flask (Python 3.8+)
-- **Database**: MongoDB with Flask-PyMongo (see [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for alternatives)
+- **Database**: SQLite (file-based, zero configuration) - see [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for alternatives
 - **Certificate Generation**: Pillow (PIL)
 - **Email**: Flask-Mail (SMTP)
 - **Bot**: python-telegram-bot
 - **Data Processing**: Pandas, openpyxl
 
-> **Note:** While MongoDB is the default database, you can use alternatives like PostgreSQL, MySQL, or SQLite. See [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for detailed information on alternative databases and migration guides.
+> **Note:** SQLite is the default database (no setup required). For production or advanced use cases, you can use PostgreSQL, MySQL, or MongoDB. See [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for detailed information on alternative databases and migration guides.
 
 ## Installation
 
@@ -55,24 +55,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Step 4: Set Up MongoDB
-
-You can run MongoDB in several ways:
-
-**Option A: Using Docker Compose (Recommended)**
-```bash
-docker compose up -d mongo
-```
-
-**Option B: Install MongoDB locally**
-- Follow [MongoDB installation guide](https://docs.mongodb.com/manual/installation/)
-- Start MongoDB service on port 27017
-
-**Option C: Use MongoDB Atlas (Cloud)**
-- Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-- Get your connection string
-
-### Step 5: Configure Environment Variables
+### Step 4: Configure Environment Variables
 
 Create a `.env` file in the root directory:
 
@@ -87,8 +70,8 @@ Edit the `.env` file with your settings:
 SECRET_KEY=your-secret-key-here-change-in-production
 FLASK_ENV=development
 
-# MongoDB Configuration
-MONGO_URI=mongodb://mongo:27017/eCertificate
+# Database (SQLite - no setup needed, file-based)
+DATABASE_URL=sqlite:///ecertificate.db
 
 # Mail Configuration (Gmail example)
 MAIL_SERVER=smtp.gmail.com
@@ -110,7 +93,7 @@ ALLOWED_EXTENSIONS=png,jpg,jpeg,svg
 OUTPUT_FOLDER=generated_certificates
 ```
 
-### Step 6: Set Up Gmail App Password (for Email)
+### Step 5: Set Up Gmail App Password (for Email)
 
 1. Go to your Google Account settings
 2. Enable 2-Factor Authentication
@@ -118,7 +101,7 @@ OUTPUT_FOLDER=generated_certificates
 4. Generate a new app password for "Mail"
 5. Use this password in your `.env` file as `MAIL_PASSWORD`
 
-### Step 7: Set Up Telegram Bot (Optional)
+### Step 6: Set Up Telegram Bot (Optional)
 
 1. Open Telegram and search for [@BotFather](https://t.me/botfather)
 2. Send `/newbot` command
@@ -264,9 +247,9 @@ Notes
 
 ## Local development with Docker Compose
 
-### Using MongoDB (Default)
+### Using SQLite (Default)
 
-To run the application together with MongoDB locally, use Docker Compose:
+To run the application with SQLite (no external database needed):
 
 1. Copy environment example:
 
@@ -274,13 +257,13 @@ To run the application together with MongoDB locally, use Docker Compose:
    cp .env.example .env
    ```
 
-2. Start services:
+2. Start the application:
 
    ```bash
    docker compose up --build
    ```
 
-The app will be available at http://localhost:8000 and the MongoDB service is available at mongodb://mongo:27017 inside the app container (or at localhost:27017 on the host).
+The app will be available at http://localhost:8000 with a file-based SQLite database.
 
 ### Using Alternative Databases
 
@@ -292,7 +275,7 @@ The application supports multiple database backends. See [DATABASE_OPTIONS.md](D
 - **MySQL:** `docker compose -f docker-compose.mysql.yml up --build`
 - **Hybrid (PostgreSQL + Redis):** `docker compose -f docker-compose.hybrid.yml up --build`
 
-**Note:** Alternative databases require code changes. See [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for migration instructions.
+**Note:** The codebase now uses SQLite by default. For MongoDB or other databases, see [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for migration instructions.
 
 
 ## Customization
@@ -317,35 +300,22 @@ Email templates can be customized in `app/utils/email_sender.py`. Modify the `se
 
 ## Troubleshooting
 
-### MongoDB Connection Issues
+### Database Issues
 
-If you encounter MongoDB connection errors:
+If you need to reset the SQLite database:
 
-**Check if MongoDB is running:**
 ```bash
-# If using Docker Compose
-docker compose ps
+# Remove the database file
+rm ecertificate.db
 
-# If using local MongoDB
-sudo systemctl status mongod  # Linux
-brew services list | grep mongodb  # macOS
+# Restart the application (it will create a new database)
+python app.py
 ```
 
-**Common fixes:**
-- Ensure MONGO_URI in `.env` matches your MongoDB setup
-- For Docker Compose: use `mongodb://mongo:27017/eCertificate`
-- For local MongoDB: use `mongodb://localhost:27017/eCertificate`
-- For Docker Desktop: use `mongodb://host.docker.internal:27017/eCertificate`
-- Check MongoDB logs: `docker compose logs mongo`
-
-### Database Issues
-### Database Issues
-
-If you need to reset the MongoDB database:
-
+For Docker:
 ```bash
-# If using Docker Compose
-docker compose down -v  # This removes volumes including database data
+# Remove the volume
+docker compose down -v
 docker compose up -d
 ```
 

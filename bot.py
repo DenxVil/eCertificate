@@ -7,14 +7,13 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from dotenv import load_dotenv
 import asyncio
 from datetime import datetime
-from bson.objectid import ObjectId
 import tempfile
 
 # Add parent directory to path to import app modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import create_app, mongo
-from app.models.mongo_models import Event, Job, Participant
+from app import create_app
+from app.models.sqlite_models import db, Event, Job, Participant
 from app.utils import parse_csv_file
 from app.routes.jobs import process_job
 
@@ -222,7 +221,7 @@ async def process_and_create_job(update: Update, context: ContextTypes.DEFAULT_T
             job_id = Job.create(event_id, telegram_chat_id=chat_id)
             
             participants_to_insert = [
-                {"job_id": ObjectId(job_id), "name": p['name'], "email": p['email'], "created_at": datetime.utcnow()}
+                {"job_id": job_id, "name": p['name'], "email": p['email']}
                 for p in participants_data
             ]
             if participants_to_insert:

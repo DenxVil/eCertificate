@@ -1,5 +1,5 @@
 Flask
-Flask-PyMongo
+Flask-SQLAlchemy
 Flask-Mail
 python-dotenv
 Pillow
@@ -7,7 +7,6 @@ pandas
 openpyxl
 python-telegram-bot
 gunicorn
-dnspython
 reportlab
 qrcode
 pytesseract
