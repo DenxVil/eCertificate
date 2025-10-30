@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Denx Certificate Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 2rem;
+        }
+        
+        nav a {
+            text-decoration: none;
+            color: #333;
+            transition: color 0.3s;
+        }
+        
+        nav a:hover {
+            color: #667eea;
+        }
+        
+        .content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 0.5rem;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 1rem;
+        }
+
+        .feature-list {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: #e3f2fd;
+            border-radius: 10px;
+        }
+
+        .feature-list ul {
+            list-style: none;
+            max-width: 600px;
+            margin: 1rem auto;
+        }
+
+        .feature-list li {
+            padding: 0.5rem 0;
+            text-align: left;
+        }
+
+        .cta-section {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 2rem;
+            padding: 1rem;
+        }
+
+        .installation {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        code {
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">🎓 Denx Certificate Generator</div>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="https://github.com/DenxVil/eCertificate" target="_blank">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <div class="content">
+            <div class="hero" id="home">
+                <h1>🎓 Welcome to Denx Certificate Generator</h1>
+                <p>Powerful certificate generation and distribution made easy</p>
+                <div>
+                    <a href="https://github.com/DenxVil/eCertificate" class="btn" target="_blank">View on GitHub</a>
+                    <a href="#installation" class="btn btn-secondary">Get Started</a>
+                </div>
+            </div>
+            
+            <div class="features" id="features">
+                <div class="feature-card">
+                    <h3>📝 Manage Events</h3>
+                    <p>Create and manage events with custom certificate templates</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>⚡ Generate Certificates</h3>
+                    <p>Generate certificates for participants and send via email</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>📱 Telegram Bot</h3>
+                    <p>Use our Telegram bot for easy certificate generation</p>
+                </div>
+            </div>
+            
+            <div class="feature-list">
+                <h2>Features</h2>
+                <ul>
+                    <li>✅ Upload custom certificate templates (PNG, JPG, SVG)</li>
+                    <li>✅ Manage multiple events</li>
+                    <li>✅ Bulk participant upload via CSV/Excel</li>
+                    <li>✅ Automatic certificate generation</li>
+                    <li>✅ Email delivery to participants</li>
+                    <li>✅ Telegram bot integration</li>
+                    <li>✅ Job status tracking</li>
+                    <li>✅ REST API endpoints</li>
+                    <li>✅ Docker support</li>
+                    <li>✅ Azure deployment ready</li>
+                </ul>
+            </div>
+
+            <div class="installation" id="installation">
+                <h2>Quick Start</h2>
+                <p>Get started with Denx Certificate Generator in just a few steps:</p>
+                
+                <h3>1. Clone the Repository</h3>
+                <pre><code>git clone https://github.com/DenxVil/eCertificate.git
+cd eCertificate</code></pre>
+
+                <h3>2. Install Dependencies</h3>
+                <pre><code>python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt</code></pre>
+
+                <h3>3. Configure Environment</h3>
+                <pre><code>cp .env.sample .env
+# Edit .env with your settings</code></pre>
+
+                <h3>4. Run the Application</h3>
+                <pre><code>python app.py</code></pre>
+
+                <p style="margin-top: 1rem;">The application will be available at <code>http://localhost:5000</code></p>
+            </div>
+
+            <div class="cta-section">
+                <h2>Technology Stack</h2>
+                <p>Built with modern, reliable technologies:</p>
+                <ul style="list-style: none; margin-top: 1rem;">
+                    <li><strong>Backend:</strong> Flask (Python 3.8+)</li>
+                    <li><strong>Database:</strong> SQLAlchemy with SQLite/MongoDB</li>
+                    <li><strong>Certificate Generation:</strong> Pillow, ReportLab</li>
+                    <li><strong>Email:</strong> Flask-Mail (SMTP)</li>
+                    <li><strong>Bot:</strong> python-telegram-bot</li>
+                    <li><strong>Data Processing:</strong> Pandas, openpyxl</li>
+                </ul>
+            </div>
+
+            <div class="cta-section">
+                <h2>Ready to Get Started?</h2>
+                <p>Check out our comprehensive documentation and start generating certificates today!</p>
+                <a href="https://github.com/DenxVil/eCertificate/blob/main/README.md" class="btn" target="_blank">Read Documentation</a>
+                <a href="https://github.com/DenxVil/eCertificate/blob/main/QUICKSTART.md" class="btn btn-secondary" target="_blank">Quick Start Guide</a>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2024 Denx Certificate Generator. All rights reserved.</p>
+        <p style="margin-top: 0.5rem;">Made with ❤️ by <a href="https://github.com/DenxVil" style="color: white; text-decoration: underline;">DenxVil</a></p>
+    </footer>
+</body>
+</html>
