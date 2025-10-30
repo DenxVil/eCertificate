@@ -1,5 +1,6 @@
 """Main Flask application initialization."""
 from flask import Flask, jsonify
+from flask_compress import Compress
 from app.models.sqlite_models import db
 import config as config_module
 from app.utils.email_sender import mail
@@ -10,6 +11,9 @@ import logging
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Initialize Flask-Compress for response compression
+compress = Compress()
 
 
 def create_app(config_name='default'):
@@ -29,6 +33,19 @@ def create_app(config_name='default'):
     # Use SQLite database
     app.config["SQLALCHEMY_DATABASE_URI"] = get_database_uri()
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,  # Verify connections before using
+        "pool_recycle": 300,    # Recycle connections after 5 minutes
+    }
+    
+    # Enable response compression
+    app.config["COMPRESS_MIMETYPES"] = [
+        'text/html', 'text/css', 'text/xml', 'application/json',
+        'application/javascript'
+    ]
+    app.config["COMPRESS_LEVEL"] = 6
+    app.config["COMPRESS_MIN_SIZE"] = 500
+    compress.init_app(app)
     
     # Initialize database
     db.init_app(app)
@@ -65,6 +82,16 @@ def create_app(config_name='default'):
     app.register_blueprint(main_bp)
     app.register_blueprint(events_bp, url_prefix='/events')
     app.register_blueprint(jobs_bp, url_prefix='/jobs')
+    
+    # Add security headers
+    @app.after_request
+    def add_security_headers(response):
+        """Add security headers to all responses."""
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        return response
     
     # Global error handlers
     @app.errorhandler(404)

@@ -8,9 +8,12 @@ db = SQLAlchemy()
 class Event(db.Model):
     """Event model for managing different events."""
     __tablename__ = 'events'
+    __table_args__ = (
+        db.Index('idx_event_created_at', 'created_at'),
+    )
     
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(255), nullable=False, index=True)
     description = db.Column(db.Text)
     template_path = db.Column(db.String(500), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -67,10 +70,15 @@ class Event(db.Model):
 class Job(db.Model):
     """Job model for tracking certificate generation jobs."""
     __tablename__ = 'jobs'
+    __table_args__ = (
+        db.Index('idx_job_event_id', 'event_id'),
+        db.Index('idx_job_status', 'status'),
+        db.Index('idx_job_created_at', 'created_at'),
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=False)
-    status = db.Column(db.String(50), default='pending')
+    status = db.Column(db.String(50), default='pending', index=True)
     total_certificates = db.Column(db.Integer, default=0)
     generated_certificates = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -137,6 +145,10 @@ class Job(db.Model):
 class Participant(db.Model):
     """Participant model for storing participant information."""
     __tablename__ = 'participants'
+    __table_args__ = (
+        db.Index('idx_participant_job_id', 'job_id'),
+        db.Index('idx_participant_email', 'email'),
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)

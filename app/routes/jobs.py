@@ -92,24 +92,37 @@ def process_job(app, job_id, customization_json=None):
                     
                 except Exception as e:
                     tb = _tb.format_exc()
-                    print(f"Error processing participant {participant.name}: {str(e)}\n{tb}")
+                    logger.error(f"Error processing participant {participant.name}: {str(e)}\n{tb}")
             
             Job.update_status(job_id, 'completed')
 
         except Exception as e:
             tb = _tb.format_exc()
             Job.update_status(job_id, 'failed', error_message=f"{str(e)}\n{tb}")
-            print(f"Job {job_id} failed: {str(e)}\n{tb}")
+            logger.error(f"Job {job_id} failed: {str(e)}\n{tb}")
 
 
 @jobs_bp.route('/')
 def list_jobs():
-    """List all jobs."""
-    jobs_list = Job.query.order_by(Job.created_at.desc()).all()
+    """List all jobs with pagination."""
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    # Limit per_page to prevent abuse
+    per_page = min(per_page, 100)
+    
+    jobs_pagination = Job.query.order_by(Job.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    jobs_list = jobs_pagination.items
     for job in jobs_list:
         event = Event.find_by_id(job.event_id)
         job.event_name = event.name if event else 'Unknown Event'
-    return render_template('jobs/list.html', jobs=jobs_list)
+    
+    return render_template('jobs/list.html', 
+                         jobs=jobs_list,
+                         pagination=jobs_pagination)
 
 
 @jobs_bp.route('/create', methods=['GET', 'POST'])
