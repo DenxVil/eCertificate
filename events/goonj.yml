@@ -4,7 +4,7 @@ event:
   description: "Certificate layout and field positions for GOONJ '25 (Azad Medical Association MAMC)."
   template: "templates/goonj_certificate.png"
   output_filename_template: "certificate_goonj_{participant_name}.pdf"
-  created_by: "DenxVil"
+  created_by: "AMA"
   created_at: "2025-10-30T17:48:50Z"
 fields:
   - id: participant_name

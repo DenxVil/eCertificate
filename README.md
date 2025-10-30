@@ -1,4 +1,4 @@
-# 🎓 Denx Certificate Generator
+# 🎓 AMA Certificate Generator
 
 A powerful web application for generating and distributing digital certificates with email delivery and Telegram bot integration.
 
@@ -386,4 +386,4 @@ For issues, questions, or suggestions, please open an issue on GitHub.
 
 ---
 
-Made with ❤️ by DenxVil
+Made with ❤️ by AMA

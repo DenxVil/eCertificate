@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Denx Certificate Generator{% endblock %}</title>
+    <title>{% block title %}AMA Certificate Generator{% endblock %}</title>
     <style>
         * {
             margin: 0;
@@ -190,12 +190,13 @@
             padding: 1rem;
         }
     </style>
+    <link rel="stylesheet" href="/static/css/creator.css">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <header>
         <nav>
-            <div class="logo">🎓 Denx Certificate Generator</div>
+            <div class="logo">🎓 AMA Certificate Generator</div>
             <ul>
                 <li><a href="/">Home</a></li>
                 <li><a href="/events/">Events</a></li>
@@ -222,7 +223,8 @@
     </div>
     
     <footer>
-        <p>&copy; 2024 Denx Certificate Generator. All rights reserved.</p>
+        <p>&copy; 2024 AMA Certificate Generator. All rights reserved.</p>
+        {% include 'partials/creator_card.html' %}
     </footer>
     
     {% block extra_js %}{% endblock %}
