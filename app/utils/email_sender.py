@@ -23,7 +23,7 @@ Please find your certificate attached to this email.
 Thank you for your participation!
 
 Best regards,
-Denx Certificate Generator Team
+AMA Certificate Generator Team
     """
 
     for attempt in range(1, retries + 1):
@@ -76,7 +76,7 @@ Summary:
 - Total failed: {total_failed}
 
 Best regards,
-Denx Certificate Generator System
+AMA Certificate Generator System
         """
         
         msg = Message(

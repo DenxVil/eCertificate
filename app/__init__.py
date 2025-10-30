@@ -78,10 +78,12 @@ def create_app(config_name='default'):
     from app.routes.main import main_bp
     from app.routes.events import events_bp
     from app.routes.jobs import jobs_bp
+    from app.routes.goonj import goonj_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(events_bp, url_prefix='/events')
     app.register_blueprint(jobs_bp, url_prefix='/jobs')
+    app.register_blueprint(goonj_bp, url_prefix='/goonj')
     
     # Add security headers
     @app.after_request
