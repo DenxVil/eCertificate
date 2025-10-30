@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GOONJ Certificate | AMA</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/goonj.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/system_status.css') }}">
 </head>
 <body>
   <header class="site-header">
@@ -101,5 +102,8 @@
       el.classList.add('muted');
     });
   </script>
+  
+  <!-- System Status Widget -->
+  <script src="{{ url_for('static', filename='js/system_status.js') }}"></script>
 </body>
 </html>

@@ -246,3 +246,97 @@ def status():
         'supported_formats': ['png', 'pdf'],
         'endpoint': '/goonj/generate'
     })
+
+
+# Cache for system status to avoid overhead
+_system_status_cache = {'data': None, 'timestamp': 0}
+_CACHE_DURATION = 2  # seconds
+
+
+@goonj_bp.route('/api/system-status', methods=['GET'])
+def system_status():
+    """Get comprehensive system status for monitoring widget.
+    
+    Returns JSON with:
+    - template_exists: bool
+    - smtp_configured: bool
+    - engine_status: "operational" | "degraded" | "error"
+    - latency_ms: int (approximate internal latency)
+    - active_jobs_count: int
+    - last_updated: ISO timestamp
+    """
+    import time
+    from datetime import datetime
+    
+    # Check cache
+    current_time = time.time()
+    if (_system_status_cache['data'] is not None and 
+        current_time - _system_status_cache['timestamp'] < _CACHE_DURATION):
+        return jsonify(_system_status_cache['data'])
+    
+    # Measure latency (simple in-memory ping)
+    start_time = time.time()
+    
+    try:
+        # Check template
+        template_path = os.path.join(
+            current_app.root_path, 
+            '..', 
+            'templates', 
+            'goonj_certificate.png'
+        )
+        template_path = os.path.abspath(template_path)
+        template_exists = os.path.exists(template_path)
+        
+        # Check SMTP
+        smtp_configured = bool(current_app.config.get('MAIL_USERNAME'))
+        
+        # Count active jobs (pending or processing)
+        try:
+            from app.models.sqlite_models import Job
+            active_jobs = Job.query.filter(
+                Job.status.in_(['pending', 'processing'])
+            ).count()
+        except Exception as e:
+            logger.warning(f"Failed to count active jobs: {e}")
+            active_jobs = 0
+        
+        # Determine engine status
+        if template_exists and smtp_configured:
+            engine_status = "operational"
+        elif template_exists:
+            engine_status = "degraded"
+        else:
+            engine_status = "error"
+        
+        # Calculate latency
+        latency_ms = int((time.time() - start_time) * 1000)
+        
+        # Build response
+        status_data = {
+            'template_exists': template_exists,
+            'smtp_configured': smtp_configured,
+            'engine_status': engine_status,
+            'latency_ms': latency_ms,
+            'active_jobs_count': active_jobs,
+            'last_updated': datetime.utcnow().isoformat() + 'Z'
+        }
+        
+        # Update cache
+        _system_status_cache['data'] = status_data
+        _system_status_cache['timestamp'] = current_time
+        
+        return jsonify(status_data)
+        
+    except Exception as e:
+        logger.exception('Error getting system status: %s', e)
+        # Return error status
+        return jsonify({
+            'template_exists': False,
+            'smtp_configured': False,
+            'engine_status': 'error',
+            'latency_ms': int((time.time() - start_time) * 1000),
+            'active_jobs_count': 0,
+            'last_updated': datetime.utcnow().isoformat() + 'Z',
+            'error': 'Failed to retrieve system status'
+        }), 500
