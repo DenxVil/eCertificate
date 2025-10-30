@@ -8,6 +8,9 @@ openpyxl
 python-telegram-bot
 gunicorn
 dnspython
+reportlab
+qrcode
+python-qrcode[pil]
 pytesseract
 pdf2image
 opencv-python
