@@ -232,14 +232,11 @@ class GOONJRenderer:
         return output_path
     
     def _draw_centered_text(self, draw, text, x, y, font, color):
-        """Draw text centered at the given position."""
-        # Get text bounding box
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
+        """Draw text centered at the given position using PIL anchor point.
         
-        # Calculate position to center the text
-        position = (x - text_width // 2, y - text_height // 2)
-        
-        # Draw the text
-        draw.text(position, text, font=font, fill=color)
+        Uses 'mm' anchor which centers text both horizontally and vertically
+        at the baseline for better alignment accuracy.
+        """
+        # Use 'mm' anchor for middle-middle alignment
+        # This centers the text at both x and y coordinates
+        draw.text((x, y), text, font=font, fill=color, anchor='mm')

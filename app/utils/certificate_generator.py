@@ -109,18 +109,25 @@ class CertificateGenerator:
         return output_path
 
     def _draw_text(self, draw, text, position, font, fill, align="center"):
-        """Draw text with specified alignment."""
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
-
+        """Draw text with specified alignment using PIL anchor points.
+        
+        Uses anchor points for precise text alignment:
+        - 'mm' for center alignment (middle-middle)
+        - 'rm' for right alignment (right-middle)
+        - 'lm' for left alignment (left-middle)
+        """
         x, y = position
-        if align == "center":
-            x -= text_width / 2
-        elif align == "right":
-            x -= text_width
-
-        draw.text((x, y - text_height / 2), text, font=font, fill=fill)
+        
+        # Map alignment to PIL anchor points
+        anchor_map = {
+            "center": "mm",  # middle-middle
+            "right": "rm",   # right-middle
+            "left": "lm"     # left-middle
+        }
+        anchor = anchor_map.get(align, "mm")
+        
+        # Draw text with anchor point for precise alignment
+        draw.text((x, y), text, font=font, fill=fill, anchor=anchor)
     
     def generate_certificate(self, participant_name, event_name=None, output_filename=None):
         """Generate a certificate using a default layout with the advanced generator.
