@@ -215,8 +215,6 @@ eCertificate/
 
 There are two simple ways to deploy this project to Azure:
 
-There are two simple ways to deploy this project to Azure:
-
 1) Use the included PowerShell script (local, interactive)
 
    - Prereqs: Azure CLI installed & logged in (`az login`), Docker Desktop installed and running.
