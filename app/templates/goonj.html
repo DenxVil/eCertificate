@@ -8,6 +8,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/system_status.css') }}">
 </head>
 <body>
+  <!-- Theme Toggle Button -->
+  <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle theme">
+    <span id="theme-icon">🌙</span>
+  </button>
+
   <header class="site-header">
     <div class="container header-inner">
       <div class="brand">AMA • GOONJ</div>
@@ -28,7 +33,7 @@
     <section class="grid">
       <div class="card">
         <h2>Single Participant</h2>
-        <form class="form" action="{{ url_for('goonj.generate_certificate') }}" method="post">
+        <form class="form" action="{{ url_for('goonj.generate_certificate') }}" method="post" onsubmit="handleFormSubmit(event, this)">
           <div class="field">
             <label for="name">Name<span class="req">*</span></label>
             <input id="name" name="name" type="text" required placeholder="Full name">
@@ -48,13 +53,13 @@
               <option value="pdf">PDF</option>
             </select>
           </div>
-          <button class="btn primary" type="submit">Generate & Download</button>
+          <button class="btn primary" type="submit" id="submit-btn-1">Generate & Download</button>
         </form>
       </div>
 
       <div class="card">
         <h2>CSV Upload (first row)</h2>
-        <form class="form" action="{{ url_for('goonj.generate_certificate') }}" method="post" enctype="multipart/form-data">
+        <form class="form" action="{{ url_for('goonj.generate_certificate') }}" method="post" enctype="multipart/form-data" onsubmit="handleFormSubmit(event, this)">
           <div class="field">
             <label for="file">CSV file</label>
             <input id="file" name="file" type="file" accept=".csv">
@@ -66,7 +71,7 @@
               <option value="pdf">PDF</option>
             </select>
           </div>
-          <button class="btn" type="submit">Generate from CSV</button>
+          <button class="btn" type="submit" id="submit-btn-2">Generate from CSV</button>
         </form>
         <p class="muted small">CSV headers supported: name, event, organiser (email optional for delivery). The first valid row will be used.</p>
       </div>
@@ -87,6 +92,39 @@
   </footer>
 
   <script>
+  // Theme toggle functionality
+  (function() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const htmlElement = document.documentElement;
+    
+    // Check for saved theme preference or default to 'light'
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    htmlElement.setAttribute('data-theme', currentTheme);
+    themeIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+    
+    themeToggle.addEventListener('click', function() {
+      const newTheme = htmlElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      htmlElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    });
+  })();
+  
+  // Form submission with loading state
+  function handleFormSubmit(event, form) {
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+    
+    // Re-enable after 5 seconds (in case download completes)
+    setTimeout(() => {
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
+    }, 5000);
+  }
+  
+  // Status check
   fetch("{{ url_for('goonj.status') }}")
     .then(r => r.json())
     .then(data => {
