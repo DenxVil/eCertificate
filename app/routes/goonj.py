@@ -155,6 +155,9 @@ def generate_certificate():
         
         # Initialize renderer
         output_folder = current_app.config.get('OUTPUT_FOLDER', 'generated_certificates')
+        # Ensure output_folder is an absolute path
+        if not os.path.isabs(output_folder):
+            output_folder = os.path.abspath(output_folder)
         renderer = GOONJRenderer(template_path, output_folder)
         
         # Generate certificate
