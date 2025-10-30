@@ -1,0 +1,48 @@
+event:
+  id: goonj
+  display_name: "GOONJ '25"
+  description: "Certificate layout and field positions for GOONJ '25 (Azad Medical Association MAMC)."
+  template: "templates/goonj_certificate.png"
+  output_filename_template: "certificate_goonj_{participant_name}.pdf"
+  created_by: "DenxVil"
+  created_at: "2025-10-30T17:48:50Z"
+fields:
+  - id: participant_name
+    label: "Participant's Name"
+    top_left: [180, 275]
+    bottom_right: [900, 305]
+    alignment: "center"
+    recommended_font_size_pt: "32-36"
+    font_style: "Serif or Formal Sans-serif"
+    placement_detail: "Below 'This is to certify that', above 'participated in'"
+    required: true
+  - id: event_name
+    label: "Event/Activity Name"
+    top_left: [225, 320]
+    bottom_right: [850, 350]
+    alignment: "center"
+    recommended_font_size_pt: "28-32"
+    font_style: "Serif or Formal Sans-serif"
+    placement_detail: "Between participant name and organizer fields"
+    required: true
+  - id: organizer_name
+    label: "Organizer's Name"
+    top_left: [130, 380]
+    bottom_right: [480, 405]
+    alignment: "center"
+    recommended_font_size_pt: "24-28"
+    font_style: "Serif or Formal Sans-serif"
+    placement_detail: "Just after 'organized by', before 'under the aegis of'"
+    required: true
+rendering:
+  default_font_family: "Times New Roman"
+  fallback_font_family: "DejaVu Sans"
+  dpi: 300
+  text_wrapping: false
+  horizontal_padding_px: 8
+  vertical_center_within_box: true
+notes:
+  - "Coordinates are in pixels relative to the top-left corner of the template image."
+  - "Alignment 'center' means horizontally center the text within the bounding box; vertically center within the box unless placement_detail specifies otherwise."
+  - "Recommended font-size ranges are guidelines — the renderer should pick the largest size in the range that fits the text into the bounding box."
+  - "If you want custom TTF/OTF fonts bundled, provide the font files and update rendering.default_font_family to the font filename (e.g., assets/fonts/YourFont.ttf)."
