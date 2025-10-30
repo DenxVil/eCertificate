@@ -29,12 +29,10 @@ def create_app(config_name='default'):
     # Initialize extensions
     try:
         mongo.init_app(app)
-        # Test database connection - fail fast if DB is unavailable
-        mongo.cx.admin.command('ping')
-        logger.info("MongoDB connection initialized and verified successfully")
+        logger.info("MongoDB connection initialized successfully")
     except Exception as e:
-        logger.error(f"MongoDB initialization or connection failed: {e}")
-        raise RuntimeError(f"Database connection failed: {e}. Application cannot start without database.")
+        logger.warning(f"MongoDB initialization failed: {e}")
+        logger.warning("App will continue without database functionality")
     
     try:
         mail.init_app(app)
@@ -55,20 +53,10 @@ def create_app(config_name='default'):
     from app.routes.main import main_bp
     from app.routes.events import events_bp
     from app.routes.jobs import jobs_bp
-    from app.routes.smart_certificate import smart_cert_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(events_bp, url_prefix='/events')
     app.register_blueprint(jobs_bp, url_prefix='/jobs')
-    app.register_blueprint(smart_cert_bp, url_prefix='/smart-certificate')
-    
-    # Ensure database indexes are created
-    try:
-        from app.models.mongo_models import ensure_indexes
-        with app.app_context():
-            ensure_indexes()
-    except Exception as e:
-        logger.warning(f"Failed to create database indexes: {e}")
     
     # Global error handlers
     @app.errorhandler(404)
