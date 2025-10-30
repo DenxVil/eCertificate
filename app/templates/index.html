@@ -369,14 +369,27 @@ templateFile.addEventListener('change', (e) => {
 });
 
 function handleFileUpload(file) {
-    // Show scanning section
-    setStep(2);
-    document.getElementById('upload-section').style.display = 'none';
-    document.getElementById('scanning-section').style.display = 'block';
+    // Show file upload confirmation
+    const uploadArea = document.getElementById('uploadArea');
+    uploadArea.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+        <h3 style="color: #28a745; margin-bottom: 0.5rem;">File Uploaded Successfully!</h3>
+        <p style="color: #666; margin: 1rem 0; font-size: 1.1rem;">
+            <strong>${file.name}</strong> (${(file.size / 1024 / 1024).toFixed(2)} MB)
+        </p>
+        <p style="color: #666; font-size: 0.95rem;">Starting AI analysis...</p>
+    `;
     
-    // Create form data
-    const formData = new FormData();
-    formData.append('template', file);
+    // Wait a moment to show the confirmation before proceeding
+    setTimeout(() => {
+        // Show scanning section
+        setStep(2);
+        document.getElementById('upload-section').style.display = 'none';
+        document.getElementById('scanning-section').style.display = 'block';
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('template', file);
     
     // Upload and scan
     fetch('/smart-certificate/scan', {
@@ -404,6 +417,7 @@ function handleFileUpload(file) {
         alert('Error uploading template: ' + error.message);
         location.reload();
     });
+    }, 1500); // Show confirmation for 1.5 seconds before proceeding
 }
 
 function displayDetectedFields(fields) {
