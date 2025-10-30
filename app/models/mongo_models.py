@@ -2,6 +2,7 @@
 from datetime import datetime
 from app import mongo
 from bson.objectid import ObjectId
+from pymongo.errors import ServerSelectionTimeoutError, AutoReconnect
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,7 +25,14 @@ class Event:
     @staticmethod
     def find_all():
         _check_db_connection()
-        return list(mongo.db.events.find())
+        try:
+            return list(mongo.db.events.find())
+        except (ServerSelectionTimeoutError, AutoReconnect) as e:
+            # Raise a clearer error for the caller and log the underlying exception
+            raise RuntimeError(
+                "Database is unreachable. Check MONGO_URI and ensure MongoDB is running. "
+                f"Original error: {e}"
+            )
 
     @staticmethod
     def find_by_id(event_id):

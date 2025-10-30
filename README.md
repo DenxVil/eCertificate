@@ -243,6 +243,24 @@ Notes
 - If you prefer to deploy without creating the cloud resources automatically, create an ACR and Web App manually in the Azure Portal, then run the PowerShell script with steps adjusted to skip resource creation (or manually push the image and set the Web App container image).
 - The Dockerfile at the repo root listens on port 8000 and runs Gunicorn. Ensure the Web App's container settings expose the correct port (App Service for Containers maps container ports automatically when configured via image).
 
+## Local development with Docker Compose
+
+To run the application together with MongoDB locally, use Docker Compose:
+
+1. Copy environment example:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Start services:
+
+   ```bash
+   docker compose up --build
+   ```
+
+The app will be available at http://localhost:8000 and the MongoDB service is available at mongodb://mongo:27017 inside the app container (or at localhost:27017 on the host).
+
 
 ## Customization
 

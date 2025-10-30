@@ -3,6 +3,7 @@ from flask import Flask, jsonify
 from flask_pymongo import PyMongo
 from config import config
 from app.utils.email_sender import mail
+from app.config.mongo_config import get_mongo_uri
 import os
 import logging
 
@@ -25,6 +26,17 @@ def create_app(config_name='default'):
     
     # Load configuration
     app.config.from_object(config[config_name])
+    
+    # Use env var for MongoDB URI
+    try:
+        app.config["MONGO_URI"] = get_mongo_uri()
+    except RuntimeError as e:
+        logger.warning(f"MongoDB URI not configured: {e}")
+        logger.warning("App will continue without database functionality")
+    
+    # Optional: Increase timeouts to allow MongoDB cold starts during compose up
+    app.config["MONGO_CONNECT_TIMEOUT_MS"] = 20000
+    app.config["MONGO_SOCKET_TIMEOUT_MS"] = 20000
     
     # Initialize extensions
     try:
