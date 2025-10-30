@@ -84,7 +84,7 @@ def generate_certificate():
         except Exception as e:
             logger.exception('Failed to parse CSV file: %s', e)
             return jsonify({
-                'error': f'Failed to parse CSV file: {str(e)}'
+                'error': 'Failed to parse CSV file. Please ensure it has valid format with headers.'
             }), 400
     
     # 2. Try CSV text from form field
@@ -101,7 +101,7 @@ def generate_certificate():
             except Exception as e:
                 logger.exception('Failed to parse CSV text: %s', e)
                 return jsonify({
-                    'error': f'Failed to parse CSV text: {str(e)}'
+                    'error': 'Failed to parse CSV text. Please ensure it has valid CSV format.'
                 }), 400
     
     # 3. Try JSON body
@@ -111,7 +111,7 @@ def generate_certificate():
         except Exception as e:
             logger.exception('Failed to parse JSON: %s', e)
             return jsonify({
-                'error': f'Failed to parse JSON: {str(e)}'
+                'error': 'Failed to parse JSON body. Please ensure valid JSON format.'
             }), 400
     
     # 4. Try form fields for direct input
@@ -163,6 +163,15 @@ def generate_certificate():
         # Generate certificate
         cert_path = renderer.render(participant_data, output_format=output_format)
         
+        # Validate the certificate path is within the output folder (security check)
+        cert_path_abs = os.path.abspath(cert_path)
+        output_folder_abs = os.path.abspath(output_folder)
+        if not cert_path_abs.startswith(output_folder_abs):
+            logger.error(f"Certificate path {cert_path_abs} is outside output folder {output_folder_abs}")
+            return jsonify({
+                'error': 'Certificate generation failed: invalid output path.'
+            }), 500
+        
         # Send email if email is present and SMTP is configured
         email_sent = False
         participant_email = participant_data.get('email')
@@ -171,28 +180,28 @@ def generate_certificate():
             email_sent = send_goonj_certificate(
                 recipient_email=participant_email,
                 recipient_name=participant_data['name'],
-                certificate_path=cert_path,
+                certificate_path=cert_path_abs,
                 event_name=event_name
             )
         
         # Return the certificate file
         mimetype = 'application/pdf' if output_format == 'pdf' else 'image/png'
         return send_file(
-            cert_path,
+            cert_path_abs,
             mimetype=mimetype,
             as_attachment=True,
-            download_name=os.path.basename(cert_path)
+            download_name=os.path.basename(cert_path_abs)
         )
         
     except FileNotFoundError as e:
         logger.error(f"File not found error: {str(e)}")
         return jsonify({
-            'error': str(e)
+            'error': 'Certificate generation failed: template or output directory not found.'
         }), 500
     except Exception as e:
         logger.exception('Error generating certificate: %s', e)
         return jsonify({
-            'error': f'Error generating certificate: {str(e)}'
+            'error': 'Error generating certificate. Please check your input data and try again.'
         }), 500
 
 

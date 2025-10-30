@@ -44,23 +44,32 @@ AMA Certificate Team
 """
     
     try:
+        # Validate certificate path exists and is a file (security check)
+        cert_path_abs = os.path.abspath(certificate_path)
+        if not os.path.exists(cert_path_abs) or not os.path.isfile(cert_path_abs):
+            logger.error(f"Certificate file not found or not a file: {cert_path_abs}")
+            return False
+        
+        # Additional security: ensure it's within the expected output folder
+        output_folder = current_app.config.get('OUTPUT_FOLDER', 'generated_certificates')
+        output_folder_abs = os.path.abspath(output_folder)
+        if not cert_path_abs.startswith(output_folder_abs):
+            logger.error(f"Certificate path {cert_path_abs} is outside output folder {output_folder_abs}")
+            return False
+        
         msg = Message(
             subject=subject,
             recipients=[recipient_email],
             body=body
         )
         
-        # Attach certificate if it exists
-        if os.path.exists(certificate_path):
-            with open(certificate_path, 'rb') as cert_file:
-                msg.attach(
-                    filename=os.path.basename(certificate_path),
-                    content_type='image/png',
-                    data=cert_file.read()
-                )
-        else:
-            logger.error(f"Certificate file not found: {certificate_path}")
-            return False
+        # Attach certificate
+        with open(cert_path_abs, 'rb') as cert_file:
+            msg.attach(
+                filename=os.path.basename(cert_path_abs),
+                content_type='image/png',
+                data=cert_file.read()
+            )
         
         mail.send(msg)
         logger.info(f"Certificate email sent successfully to {recipient_email}")
