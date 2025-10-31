@@ -20,7 +20,7 @@ def send_goonj_certificate(recipient_email, recipient_name, certificate_path, ev
         recipient_name: Name of the recipient
         certificate_path: Path to the certificate file
         event_name: Name of the event (default: "GOONJ")
-        max_retries: Maximum number of retry attempts (defaults to EMAIL_MAX_RETRIES from config, or 150)
+        max_retries: Maximum number of retry attempts (defaults to EMAIL_MAX_RETRIES from config, or 3)
     
     Returns:
         Dictionary with 'success' (bool) and 'attempts' (int) keys
@@ -36,7 +36,7 @@ def send_goonj_certificate(recipient_email, recipient_name, certificate_path, ev
     
     # Get retry count from config if not specified
     if max_retries is None:
-        max_retries = current_app.config.get('EMAIL_MAX_RETRIES', 150)
+        max_retries = current_app.config.get('EMAIL_MAX_RETRIES', 3)
     
     # FINAL ALIGNMENT CHECK before sending
     # This ensures we never send a certificate that doesn't match the reference

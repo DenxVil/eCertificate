@@ -148,7 +148,7 @@ def _get_verification_message(passed, diff_pct, max_diff, tolerance_px):
         return f"FAILED: Certificate differs from reference by {diff_pct:.6f}% (exceeds {tolerance_px}px tolerance)"
 
 
-def verify_with_retry(generated_path, reference_path, max_attempts=100, tolerance_px=0.01):
+def verify_with_retry(generated_path, reference_path, max_attempts=30, tolerance_px=0.01):
     """Verify certificate alignment with retry logic.
     
     Attempts to verify alignment multiple times. This is useful when generation
@@ -157,7 +157,7 @@ def verify_with_retry(generated_path, reference_path, max_attempts=100, toleranc
     Args:
         generated_path: Path to the generated certificate image
         reference_path: Path to the reference sample certificate
-        max_attempts: Maximum number of verification attempts (default: 3)
+        max_attempts: Maximum number of verification attempts (default: 30)
         tolerance_px: Maximum allowed difference in pixels (default: 0.01)
         
     Returns:
