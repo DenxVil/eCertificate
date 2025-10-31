@@ -1,0 +1,81 @@
+{
+  "name": "Executive Excellence Award",
+  "description": "Premium certificate for executive achievements",
+  "background_image": null,
+  "width": 11.0,
+  "height": 8.5,
+  "elements": [
+    {
+      "text": "\ud83c\udfc6 EXECUTIVE EXCELLENCE AWARD \ud83c\udfc6",
+      "x": 5.5,
+      "y": 0.8,
+      "font_name": "Helvetica",
+      "font_size": 40,
+      "color": "#FF6B00",
+      "alignment": "center",
+      "bold": true,
+      "italic": false
+    },
+    {
+      "text": "PRESENTED TO",
+      "x": 5.5,
+      "y": 2.2,
+      "font_name": "Helvetica",
+      "font_size": 18,
+      "color": "#333333",
+      "alignment": "center",
+      "bold": false,
+      "italic": false
+    },
+    {
+      "text": "{{participant_name}}",
+      "x": 5.5,
+      "y": 3.0,
+      "font_name": "Helvetica",
+      "font_size": 44,
+      "color": "#003366",
+      "alignment": "center",
+      "bold": true,
+      "italic": false
+    },
+    {
+      "text": "In recognition of outstanding leadership and innovation",
+      "x": 5.5,
+      "y": 3.9,
+      "font_name": "Helvetica",
+      "font_size": 14,
+      "color": "#555555",
+      "alignment": "center",
+      "bold": false,
+      "italic": false
+    },
+    {
+      "text": "{{event_name}}",
+      "x": 5.5,
+      "y": 4.6,
+      "font_name": "Helvetica",
+      "font_size": 28,
+      "color": "#FF6B00",
+      "alignment": "center",
+      "bold": true,
+      "italic": false
+    },
+    {
+      "text": "Presented on {{date}}",
+      "x": 5.5,
+      "y": 6.2,
+      "font_name": "Helvetica",
+      "font_size": 12,
+      "color": "#666666",
+      "alignment": "center",
+      "bold": false,
+      "italic": false
+    }
+  ],
+  "margins": [
+    0.5,
+    0.5,
+    0.5,
+    0.5
+  ]
+}
