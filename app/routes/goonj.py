@@ -1,5 +1,5 @@
 """GOONJ certificate generation routes."""
-from flask import Blueprint, request, jsonify, send_file, current_app, render_template, url_for
+from flask import Blueprint, request, jsonify, send_file, current_app, render_template, url_for, session
 from app.utils.goonj_renderer import GOONJRenderer
 from app.utils.mail import send_goonj_certificate
 from app.utils.alignment_checker import (
@@ -10,15 +10,24 @@ from app.utils.alignment_checker import (
 from app.utils.auto_alignment_fixer import ensure_ditto_alignment
 from app.utils.universal_alignment_checker import verify_all_certificates
 from app.utils.field_position_verifier import verify_field_positions
+from app.utils.iterative_alignment_verifier import (
+    verify_alignment_with_retries,
+    extract_field_positions,
+    calculate_position_difference
+)
 import os
 import io
 import csv
 import json
 import logging
 import base64
+import time
 
 goonj_bp = Blueprint('goonj', __name__)
 logger = logging.getLogger(__name__)
+
+# Global progress tracking for alignment verification
+_alignment_progress = {}
 
 
 @goonj_bp.route('/', methods=['GET'])
@@ -254,85 +263,93 @@ def generate_certificate():
                 'error': 'Certificate generation failed: invalid output path.'
             }), 500
         
-        # ALIGNMENT VERIFICATION: Verify ALL generated certificates
-        # This ensures consistent dimensions, format, template configuration, and field positions
+        # ALIGNMENT VERIFICATION: Iterative verification with retry logic
+        # This ensures field positions match Sample_certificate.png within 0.02px tolerance
         alignment_enabled = current_app.config.get('ENABLE_ALIGNMENT_CHECK', True)
         alignment_status = {
             'enabled': alignment_enabled,
             'passed': True,
+            'attempts': 1,
             'message': 'Alignment verification skipped (disabled)',
             'details': {},
-            'field_positions': {}
+            'field_positions': {},
+            'max_difference_px': 0.0
         }
         
         if alignment_enabled:
             try:
-                logger.info("Running universal alignment verification for certificate")
+                logger.info("Running iterative alignment verification for certificate")
                 
-                # Step 1: Universal verification (dimensions, format, template)
-                verification_result = verify_all_certificates(cert_path_abs, template_path)
-                
-                alignment_status['passed'] = verification_result['passed']
-                alignment_status['details'] = verification_result['checks']
-                
-                if not verification_result['passed']:
-                    alignment_status['message'] = verification_result['message']
-                    logger.error(f"❌ Alignment verification FAILED: {verification_result['message']}")
-                    
-                    # Clean up the failed certificate
-                    try:
-                        os.remove(cert_path_abs)
-                        logger.info(f"Removed failed certificate: {cert_path_abs}")
-                    except Exception as cleanup_error:
-                        logger.warning(f"Could not remove failed certificate: {cleanup_error}")
-                    
-                    return jsonify({
-                        'success': False,
-                        'error': 'Certificate alignment verification failed',
-                        'message': verification_result['message'],
-                        'alignment_status': alignment_status
-                    }), 500
-                
-                # Step 2: Field position verification (Y-coordinate alignment)
-                # Compare with sample_certificate.png to ensure field vertical positions match
+                # Use Sample_certificate.png as reference (capital S)
                 sample_cert_path = os.path.join(
                     current_app.root_path,
                     '..',
                     'templates',
-                    'sample_certificate.png'
+                    'Sample_certificate.png'
                 )
                 sample_cert_path = os.path.abspath(sample_cert_path)
                 
-                if os.path.exists(sample_cert_path):
-                    try:
-                        # Get field position tolerance from config
-                        tolerance_px = current_app.config.get('FIELD_POSITION_TOLERANCE_PX', 2)
-                        
-                        field_position_result = verify_field_positions(
-                            cert_path_abs,
-                            sample_cert_path,
-                            tolerance_px=tolerance_px
-                        )
-                        
-                        alignment_status['field_positions'] = field_position_result
-                        
-                        if field_position_result['passed']:
-                            logger.info(f"✅ Field position verification PASSED: {field_position_result['message']}")
-                            alignment_status['message'] = f"All checks passed. {field_position_result['message']}"
-                        else:
-                            logger.warning(f"⚠️ Field position verification FAILED: {field_position_result['message']}")
-                            # Don't fail the certificate, just log warning
-                            # This allows for minor rendering differences while still alerting
-                            alignment_status['message'] = f"Dimension checks passed. Field positions: {field_position_result['message']}"
-                    except Exception as e:
-                        logger.warning(f"Field position verification error (non-fatal): {e}")
-                        alignment_status['field_positions'] = {'error': str(e)}
-                        alignment_status['message'] = f"All checks passed. Field position check skipped: {str(e)}"
+                if not os.path.exists(sample_cert_path):
+                    logger.warning(f"Sample certificate not found at {sample_cert_path}, skipping field alignment check")
+                    alignment_status['message'] = "Alignment check skipped - reference sample not found"
                 else:
-                    logger.warning(f"Sample certificate not found at {sample_cert_path}, skipping field position check")
-                    alignment_status['message'] = "All checks passed (field position check skipped - no sample reference)"
-                
-                logger.info(f"✅ Certificate verification completed: {alignment_status['message']}")
+                    # Get configuration
+                    tolerance_px = current_app.config.get('ALIGNMENT_TOLERANCE_PX', 0.02)
+                    max_attempts = current_app.config.get('ALIGNMENT_MAX_ATTEMPTS', 100)
+                    
+                    # Generate a session ID for progress tracking
+                    import uuid
+                    session_id = str(uuid.uuid4())
+                    
+                    # Progress callback
+                    def progress_callback(attempt, max_attempts):
+                        global _alignment_progress
+                        _alignment_progress[session_id] = {
+                            'attempt': attempt,
+                            'max_attempts': max_attempts,
+                            'status': 'verifying',
+                            'timestamp': time.time()
+                        }
+                    
+                    # For single-shot generation (no regeneration), just verify once
+                    # The iterative retry is mainly for batch generation
+                    verification_result = verify_alignment_with_retries(
+                        cert_path_abs,
+                        sample_cert_path,
+                        tolerance_px=tolerance_px,
+                        max_attempts=1,  # Single verification for now
+                        regenerate_func=None,
+                        progress_callback=progress_callback
+                    )
+                    
+                    alignment_status['passed'] = verification_result['passed']
+                    alignment_status['attempts'] = verification_result['attempts']
+                    alignment_status['max_difference_px'] = verification_result.get('max_difference_px', 0.0)
+                    alignment_status['field_positions'] = verification_result.get('fields', {})
+                    alignment_status['message'] = verification_result['message']
+                    
+                    # Clean up progress tracking
+                    if session_id in _alignment_progress:
+                        del _alignment_progress[session_id]
+                    
+                    if not verification_result['passed']:
+                        logger.error(f"❌ Alignment verification FAILED: {verification_result['message']}")
+                        
+                        # Clean up the failed certificate
+                        try:
+                            os.remove(cert_path_abs)
+                            logger.info(f"Removed failed certificate: {cert_path_abs}")
+                        except Exception as cleanup_error:
+                            logger.warning(f"Could not remove failed certificate: {cleanup_error}")
+                        
+                        return jsonify({
+                            'success': False,
+                            'error': 'Certificate alignment verification failed',
+                            'message': verification_result['message'],
+                            'alignment_status': alignment_status
+                        }), 500
+                    
+                    logger.info(f"✅ Alignment verification PASSED: {verification_result['message']}")
                     
             except Exception as e:
                 logger.exception(f"Unexpected error during alignment verification: {e}")
@@ -636,3 +653,27 @@ def system_status():
             'last_updated': datetime.utcnow().isoformat() + 'Z',
             'error': 'Failed to retrieve system status'
         }), 500
+
+
+@goonj_bp.route('/api/alignment-progress/<session_id>', methods=['GET'])
+def get_alignment_progress(session_id):
+    """Get alignment verification progress for a session.
+    
+    Args:
+        session_id: Unique session ID for tracking progress
+        
+    Returns:
+        JSON with current attempt number and status
+    """
+    global _alignment_progress
+    
+    if session_id in _alignment_progress:
+        return jsonify({
+            'success': True,
+            **_alignment_progress[session_id]
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'message': 'No active alignment verification for this session'
+        })

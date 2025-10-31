@@ -88,9 +88,11 @@ def create_app(config_name='default'):
     # Register blueprints
     from app.routes.main import main_bp
     from app.routes.goonj import goonj_bp
+    from app.routes.developer import developer_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(goonj_bp, url_prefix='/goonj')
+    app.register_blueprint(developer_bp, url_prefix='/developer')
     
     # Add security headers
     @app.after_request

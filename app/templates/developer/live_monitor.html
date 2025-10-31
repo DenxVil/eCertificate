@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Monitor | Developer Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+    
+    .header {
+      background: #2c3e50;
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    
+    .nav {
+      margin-top: 0.5rem;
+    }
+    
+    .nav a {
+      color: #ecf0f1;
+      text-decoration: none;
+      margin-right: 1.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    
+    .nav a:hover, .nav a.active {
+      background: rgba(255,255,255,0.1);
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+    
+    .status-bar {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    .status-dot.active {
+      background: #28a745;
+    }
+    
+    .status-dot.inactive {
+      background: #dc3545;
+      animation: none;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .activity-feed {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .activity-feed h2 {
+      margin-bottom: 1rem;
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 0.5rem;
+    }
+    
+    .activity-item {
+      padding: 1rem;
+      border-left: 3px solid #3498db;
+      margin-bottom: 0.75rem;
+      background: #f8f9fa;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    
+    .activity-item:hover {
+      background: #e9ecef;
+      transform: translateX(5px);
+    }
+    
+    .activity-item.new {
+      animation: highlight 1s;
+    }
+    
+    @keyframes highlight {
+      0% { background: #d1ecf1; }
+      100% { background: #f8f9fa; }
+    }
+    
+    .activity-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    
+    .activity-time {
+      color: #6c757d;
+      font-size: 0.85rem;
+    }
+    
+    .activity-type {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .activity-type.info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+    
+    .activity-type.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .activity-type.warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .activity-type.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .activity-message {
+      color: #495057;
+      font-size: 0.95rem;
+    }
+    
+    .activity-component {
+      display: inline-block;
+      margin-top: 0.5rem;
+      padding: 0.2rem 0.5rem;
+      background: white;
+      border-radius: 3px;
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #6c757d;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #3498db;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🔴 Live System Monitor</h1>
+    <div class="nav">
+      <a href="/developer">Dashboard</a>
+      <a href="/developer/logs">Logs</a>
+      <a href="/developer/live-monitor" class="active">Live Monitor</a>
+      <a href="/goonj">GOONJ</a>
+      <a href="/">Home</a>
+    </div>
+  </div>
+  
+  <div class="container">
+    <div class="status-bar">
+      <div class="status-indicator">
+        <div class="status-dot active" id="status-dot"></div>
+        <span id="status-text">Live Monitoring Active</span>
+      </div>
+      <div>
+        <span id="activity-count">0 activities</span>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button class="btn btn-primary" onclick="clearActivities()">Clear Activities</button>
+      <label>
+        <input type="checkbox" id="auto-scroll" checked> Auto-scroll to new activities
+      </label>
+    </div>
+    
+    <div class="activity-feed">
+      <h2>Real-time System Activity</h2>
+      <div id="activity-container">
+        <div class="empty-state">Monitoring system activity...</div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let activities = [];
+    let activityCount = 0;
+    
+    // Start monitoring on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      startMonitoring();
+    });
+    
+    function startMonitoring() {
+      // Poll for activity every 2 seconds
+      setInterval(fetchActivity, 2000);
+      
+      // Initial fetch
+      fetchActivity();
+    }
+    
+    function fetchActivity() {
+      fetch('/developer/api/live-activity')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.activities) {
+            // Add new activities
+            data.activities.forEach(activity => {
+              addActivity(activity);
+            });
+            updateActivityCount();
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching activity:', error);
+          updateStatusIndicator(false);
+        });
+    }
+    
+    function addActivity(activity) {
+      activities.unshift(activity);
+      activityCount++;
+      
+      // Limit to 100 activities
+      if (activities.length > 100) {
+        activities = activities.slice(0, 100);
+      }
+      
+      displayActivities();
+    }
+    
+    function displayActivities() {
+      const container = document.getElementById('activity-container');
+      
+      if (activities.length === 0) {
+        container.innerHTML = '<div class="empty-state">No activities yet. System is idle.</div>';
+        return;
+      }
+      
+      let html = '';
+      activities.forEach((activity, index) => {
+        const timestamp = new Date(activity.timestamp).toLocaleString();
+        const isNew = index === 0;
+        
+        html += `
+          <div class="activity-item ${isNew ? 'new' : ''}">
+            <div class="activity-header">
+              <span class="activity-type ${activity.type}">${activity.type}</span>
+              <span class="activity-time">${timestamp}</span>
+            </div>
+            <div class="activity-message">${escapeHtml(activity.message)}</div>
+            <span class="activity-component">${activity.component}</span>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+      
+      // Auto-scroll if enabled
+      if (document.getElementById('auto-scroll').checked) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+    
+    function updateActivityCount() {
+      document.getElementById('activity-count').textContent = 
+        `${activityCount} ${activityCount === 1 ? 'activity' : 'activities'}`;
+    }
+    
+    function updateStatusIndicator(isActive) {
+      const dot = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+      
+      if (isActive) {
+        dot.classList.remove('inactive');
+        dot.classList.add('active');
+        text.textContent = 'Live Monitoring Active';
+      } else {
+        dot.classList.remove('active');
+        dot.classList.add('inactive');
+        text.textContent = 'Monitoring Paused (Connection Error)';
+      }
+    }
+    
+    function clearActivities() {
+      activities = [];
+      activityCount = 0;
+      displayActivities();
+      updateActivityCount();
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
