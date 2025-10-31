@@ -388,8 +388,8 @@ def generate_certificate():
             except Exception as e:
                 logger.exception(f"Unexpected error during alignment verification: {e}")
                 alignment_status['passed'] = False
-                alignment_status['message'] = f'Verification error: {e}'
-                alignment_status['error'] = str(e)
+                alignment_status['message'] = 'An unexpected error occurred during alignment verification'
+                # Don't expose exception details to external users
         
         # Optional validation in dev mode (gated by DEBUG_VALIDATE)
         if current_app.config.get('DEBUG_VALIDATE', False):

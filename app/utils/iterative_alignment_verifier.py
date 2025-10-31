@@ -261,7 +261,7 @@ def verify_alignment_with_retries(
                     'attempts': attempt,
                     'max_difference_px': float('inf'),
                     'fields': {},
-                    'message': f'Verification error on attempt {attempt}: {str(e)}'
+                    'message': f'Verification error on attempt {attempt}'
                 }
             # Continue to next attempt
             continue

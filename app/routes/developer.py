@@ -306,7 +306,7 @@ def api_azure_logs():
         logger.exception("Error checking Azure logs configuration")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Failed to retrieve Azure logs configuration'
         }), 500
 
 
