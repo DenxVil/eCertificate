@@ -1,9 +1,409 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+  .hero-section {
+    text-align: center;
+    padding: 3rem 0;
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-subtitle {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+    padding: 0.8rem 1.5rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-secondary:hover {
+    background: #e0e0e0;
+    border-color: #ccc;
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+  }
+
+  .feature-card {
+    padding: 1.5rem;
+    background: #f9f9f9;
+    border-radius: 10px;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .feature-title {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    color: #667eea;
+  }
+
+  .feature-description {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  /* Developer Access Modal */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 2rem;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.3s ease;
+  }
+
+  @keyframes slideDown {
+    from {
+      transform: translateY(-50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 20px;
+  }
+
+  .close:hover,
+  .close:focus {
+    color: #000;
+  }
+
+  .modal h2 {
+    margin-top: 0;
+    color: #667eea;
+  }
+
+  .password-input-group {
+    margin: 1.5rem 0;
+  }
+
+  .password-input-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    text-align: center;
+    letter-spacing: 0.5rem;
+  }
+
+  .password-input-group input:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+
+  .attempts-info {
+    text-align: center;
+    margin: 1rem 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .attempts-warning {
+    color: #e74c3c;
+    font-weight: bold;
+  }
+
+  .error-message {
+    color: #e74c3c;
+    text-align: center;
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+  }
+
+  .success-message {
+    color: #27ae60;
+    text-align: center;
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="text-align:center; padding: 2rem 0;">
-  <h1>GOONJ Certificate Portal</h1>
-  <p class="muted">Generate and download your GOONJ certificate instantly.</p>
-  <a class="btn primary" href="/goonj" style="margin-top:1rem;">Open GOONJ Generator</a>
+<div class="hero-section">
+  <h1 class="hero-title">🎓 GOONJ Certificate Portal</h1>
+  <p class="hero-subtitle">Generate and download your GOONJ certificate instantly.</p>
+  
+  <div class="button-group">
+    <a class="btn-primary" href="/goonj">Open GOONJ Generator</a>
+    <button class="btn-secondary" onclick="openDeveloperModal()">🛠️ Developer Access</button>
+  </div>
 </div>
+
+<div class="features">
+  <div class="feature-card">
+    <div class="feature-icon">📜</div>
+    <h3 class="feature-title">Quick Generation</h3>
+    <p class="feature-description">Generate certificates in seconds with our automated system</p>
+  </div>
+  
+  <div class="feature-card">
+    <div class="feature-icon">📧</div>
+    <h3 class="feature-title">Email Delivery</h3>
+    <p class="feature-description">Automatically send certificates to participants via email</p>
+  </div>
+  
+  <div class="feature-card">
+    <div class="feature-icon">🎨</div>
+    <h3 class="feature-title">Professional Design</h3>
+    <p class="feature-description">Beautiful templates with perfect alignment and quality</p>
+  </div>
+</div>
+
+<!-- Developer Access Modal -->
+<div id="developerModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeDeveloperModal()">&times;</span>
+    <h2>🔒 Developer Access</h2>
+    <p style="text-align: center; color: #666; margin-bottom: 1rem;">Enter password to access developer dashboard</p>
+    
+    <div class="password-input-group">
+      <input type="password" id="developerPassword" placeholder="Enter Password" maxlength="4" 
+             onkeypress="handlePasswordKeypress(event)">
+    </div>
+    
+    <div class="attempts-info">
+      Attempt <span id="currentAttempt">0</span> of <span id="maxAttempts">150</span>
+    </div>
+    
+    <div id="errorMessage" class="error-message" style="display: none;"></div>
+    <div id="successMessage" class="success-message" style="display: none;"></div>
+    
+    <button class="btn-primary" onclick="verifyPassword()" style="width: 100%; margin-top: 1rem;">
+      Submit
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  /*
+   * SECURITY NOTE: This is a basic client-side access control mechanism.
+   * The password is intentionally simple (1234) and stored client-side for convenience.
+   * This is NOT suitable for protecting sensitive data or production environments.
+   * 
+   * Known limitations:
+   * - Password is visible in page source
+   * - Attempt counter can be reset by clearing localStorage
+   * - Users can bypass this by directly accessing /developer URL
+   * 
+   * For production use, implement:
+   * - Server-side authentication (Flask-Login, OAuth, etc.)
+   * - Session-based access control
+   * - Server-side attempt tracking
+   * - Environment-based password configuration
+   */
+  
+  const CORRECT_PASSWORD = '1234';
+  const MAX_ATTEMPTS = 150;
+  const STORAGE_KEY = 'developerAttempts';
+
+  // Initialize attempts from localStorage
+  let attempts = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+
+  function updateAttemptsDisplay() {
+    document.getElementById('currentAttempt').textContent = attempts;
+    document.getElementById('maxAttempts').textContent = MAX_ATTEMPTS;
+    
+    if (attempts >= MAX_ATTEMPTS * 0.8) {
+      document.querySelector('.attempts-info').classList.add('attempts-warning');
+    }
+  }
+
+  function openDeveloperModal() {
+    if (attempts >= MAX_ATTEMPTS) {
+      // Show error in a more user-friendly way
+      showMaxAttemptsError();
+      return;
+    }
+    
+    document.getElementById('developerModal').style.display = 'block';
+    document.getElementById('developerPassword').focus();
+    updateAttemptsDisplay();
+    
+    // Clear previous messages
+    document.getElementById('errorMessage').style.display = 'none';
+    document.getElementById('successMessage').style.display = 'none';
+    document.getElementById('developerPassword').value = '';
+  }
+
+  function closeDeveloperModal() {
+    document.getElementById('developerModal').style.display = 'none';
+  }
+
+  function handlePasswordKeypress(event) {
+    if (event.key === 'Enter') {
+      verifyPassword();
+    }
+  }
+
+  function verifyPassword() {
+    const password = document.getElementById('developerPassword').value;
+    const errorMsg = document.getElementById('errorMessage');
+    const successMsg = document.getElementById('successMessage');
+    
+    // Hide previous messages
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
+    
+    if (!password) {
+      errorMsg.textContent = 'Please enter a password';
+      errorMsg.style.display = 'block';
+      return;
+    }
+    
+    attempts++;
+    localStorage.setItem(STORAGE_KEY, attempts.toString());
+    updateAttemptsDisplay();
+    
+    if (password === CORRECT_PASSWORD) {
+      successMsg.textContent = '✓ Access granted! Redirecting...';
+      successMsg.style.display = 'block';
+      
+      setTimeout(() => {
+        window.location.href = '/developer';
+      }, 1000);
+    } else {
+      if (attempts >= MAX_ATTEMPTS) {
+        errorMsg.textContent = 'Maximum attempts reached. Access denied.';
+        errorMsg.style.display = 'block';
+        
+        setTimeout(() => {
+          closeDeveloperModal();
+        }, 2000);
+      } else {
+        const remaining = MAX_ATTEMPTS - attempts;
+        errorMsg.textContent = `✗ Incorrect password. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`;
+        errorMsg.style.display = 'block';
+        
+        document.getElementById('developerPassword').value = '';
+        document.getElementById('developerPassword').focus();
+      }
+    }
+  }
+
+  // Close modal when clicking outside of it
+  window.onclick = function(event) {
+    const modal = document.getElementById('developerModal');
+    if (event.target === modal) {
+      closeDeveloperModal();
+    }
+  }
+
+  // Initialize display on page load
+  updateAttemptsDisplay();
+
+  function showMaxAttemptsError() {
+    const errorContainer = document.createElement('div');
+    errorContainer.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+      z-index: 10000;
+      text-align: center;
+      max-width: 400px;
+    `;
+    errorContainer.innerHTML = `
+      <h3 style="color: #e74c3c; margin-bottom: 1rem;">🔒 Access Denied</h3>
+      <p style="margin-bottom: 1.5rem;">Maximum attempts reached. Please contact the administrator to reset your access.</p>
+      <button onclick="this.parentElement.remove()" style="padding: 0.5rem 1.5rem; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">OK</button>
+    `;
+    document.body.appendChild(errorContainer);
+  }
+</script>
 {% endblock %}
