@@ -125,28 +125,27 @@ class CertificateGenerator:
             Path to the generated certificate
         """
         # Define a default, well-aligned layout using the advanced 'generate' method
+        # Positions based on IMG_0929.png template analysis:
+        # - NAME placeholder at Y=0.446 (631px)
+        # - EVENT placeholder at Y=0.636 (899px)
+        # - DATE footer area at Y=0.919 (1299px)
         fields = [
             {
                 "text": participant_name,
-                "x": 0.5, "y": 0.45,
+                "x": 0.5, "y": 0.446,
                 "font_name": "arial.ttf", "font_size": 60, "align": "center"
-            },
-            {
-                "text": "For successfully participating in",
-                "x": 0.5, "y": 0.58,
-                "font_name": "arial.ttf", "font_size": 30, "align": "center"
             }
         ]
         if event_name:
             fields.append({
                 "text": event_name,
-                "x": 0.5, "y": 0.65,
+                "x": 0.5, "y": 0.636,
                 "font_name": "arial.ttf", "font_size": 45, "align": "center"
             })
         
         fields.append({
             "text": datetime.now().strftime("%B %d, %Y"),
-            "x": 0.5, "y": 0.8,
+            "x": 0.5, "y": 0.919,
             "font_name": "arial.ttf", "font_size": 25, "align": "center"
         })
 

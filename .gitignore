@@ -146,3 +146,4 @@ AzureCLI.zip
 # Generated certificates
 generated_certificates/
 uploads/
+test_output/
