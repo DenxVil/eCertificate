@@ -222,8 +222,31 @@
           <h4>🎯 Alignment Verification</h4>
           <p><strong>Status:</strong> ${data.alignment_status.passed ? '✅ Passed' : '❌ Failed'}</p>
           <p>${data.alignment_status.message}</p>
-        </div>
       `;
+      
+      // Show field position details if available
+      if (data.alignment_status.field_positions && data.alignment_status.field_positions.fields) {
+        const fp = data.alignment_status.field_positions;
+        details += `
+          <div class="field-positions">
+            <p><strong>Field Position Accuracy:</strong></p>
+            <ul style="margin: 0.5em 0; padding-left: 1.5em;">
+        `;
+        
+        for (const [fieldName, fieldData] of Object.entries(fp.fields)) {
+          const status = fieldData.passed ? '✓' : '✗';
+          const color = fieldData.passed ? '#10b981' : '#f59e0b';
+          const offset = fieldData.offset !== undefined ? fieldData.offset : '?';
+          details += `<li style="color: ${color};">${status} ${fieldName}: ${offset}px offset</li>`;
+        }
+        
+        details += `
+            </ul>
+          </div>
+        `;
+      }
+      
+      details += '</div>';
     }
     
     // Email status
