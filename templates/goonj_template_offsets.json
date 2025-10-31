@@ -1,41 +1,34 @@
 {
-  "version": "4.0",
-  "template": "template_goonj.png",
+  "version": "5.0",
+  "template": "template_extracted_from_sample.png",
   "template_alias": "goonj_certificate.png",
   "reference": "Sample_certificate.png",
-  "description": "Precise field positions extracted from Sample_certificate.png using 10 advanced computer vision methods. Consensus positions from 9 successful detection algorithms.",
+  "description": "Positions and font sizes extracted from Sample_certificate.png using contour detection and font matching. Reference uses very large fonts (346pt, 170pt, 102pt).",
   "fields": {
     "name": {
-      "x": 0.524324,
-      "y": 0.287417,
+      "x": 0.537,
+      "y": 0.1679510465703728,
       "baseline_offset": 0,
-      "description": "Participant name field - centered at y=406.7px (extracted from 9 CV methods, std_dev: 0.088px)"
+      "font_size": 346,
+      "description": "Participant name field - centered at y=357.5px, font size 346pt (text height: 433px)"
     },
     "event": {
-      "x": 0.486657,
-      "y": 0.507218,
+      "x": 0.4755,
+      "y": 0.4829698074360423,
       "baseline_offset": 0,
-      "description": "Event name field - centered at y=717.7px (extracted from 9 CV methods, std_dev: 0.116px)"
+      "font_size": 170,
+      "description": "Event name field - centered at y=733.5px, font size 170pt (text height: 213px)"
     },
     "organiser": {
-      "x": 0.495901,
-      "y": 0.706015,
+      "x": 0.493,
+      "y": 0.723058218581044,
       "baseline_offset": 0,
-      "description": "Organiser field - centered at y=999.0px (extracted from 9 CV methods, std_dev: 0.182px)"
+      "font_size": 102,
+      "description": "Organiser field - centered at y=1020px, font size 102pt (text height: 128px)"
     }
   },
   "tolerance_px": 0.01,
   "calibration_date": "2025-10-31",
-  "extraction_methods": [
-    "Color Analysis",
-    "Edge Detection (Canny)",
-    "Contour Detection",
-    "Projection Profile",
-    "Morphological Operations",
-    "Adaptive Thresholding",
-    "Histogram Analysis (LAB)",
-    "Connected Components",
-    "Gradient Analysis (Sobel)"
-  ],
-  "notes": "Field positions extracted using 10 advanced computer vision techniques. 9 methods succeeded and were aggregated using median consensus. This provides robust, data-driven alignment based on the actual reference certificate."
+  "analysis_method": "contour_detection_and_font_matching",
+  "notes": "Font sizes and positions extracted from reference certificate using computer vision. Reference uses Arial Bold at very large sizes (24-37% of image height for name field text). Template extracted from reference using CV inpainting."
 }

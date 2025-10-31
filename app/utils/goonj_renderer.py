@@ -41,11 +41,11 @@ class GOONJRenderer:
         
         # Define bounding boxes for GOONJ certificate (supports three fields only)
         # Positions as percentage of template height for vertical placement
-        # NAME at ~33% (32-35%), EVENT at ~42% (41-43%), ORGANISED BY at ~51% (49-52%)
+        # Font sizes tuned to match Sample_certificate.png
         self.name_bbox = {
             'x': width // 2,
             'y': int(height * self.field_offsets['name']['y']),
-            'base_font_size': int(height * 0.05),  # ~5% of height
+            'base_font_size': 250,  # Tuned to match reference (reference analysis: 346pt, but actual is smaller)
             'color': '#000000',  # Pure black
             'baseline_offset': self.field_offsets['name'].get('baseline_offset', 0)
         }
@@ -53,7 +53,7 @@ class GOONJRenderer:
         self.event_bbox = {
             'x': width // 2,
             'y': int(height * self.field_offsets['event']['y']),
-            'base_font_size': int(height * 0.042),  # ~4.2% of height
+            'base_font_size': 100,  # Tuned to match reference (reference analysis: 170pt, but actual is smaller)
             'color': '#000000',  # Pure black
             'baseline_offset': self.field_offsets['event'].get('baseline_offset', 0)
         }
@@ -61,7 +61,7 @@ class GOONJRenderer:
         self.organiser_bbox = {
             'x': width // 2,
             'y': int(height * self.field_offsets['organiser']['y']),
-            'base_font_size': int(height * 0.042),  # ~4.2% of height
+            'base_font_size': 110,  # Tuned to match reference (reference analysis: 102pt, need slight increase)
             'color': '#000000',  # Pure black
             'baseline_offset': self.field_offsets['organiser'].get('baseline_offset', 0)
         }
