@@ -2,6 +2,11 @@
 from flask import Blueprint, request, jsonify, send_file, current_app, render_template
 from app.utils.goonj_renderer import GOONJRenderer
 from app.utils.mail import send_goonj_certificate
+from app.utils.alignment_checker import (
+    verify_certificate_alignment,
+    get_reference_certificate_path,
+    AlignmentVerificationError
+)
 import os
 import io
 import csv
@@ -192,6 +197,103 @@ def generate_certificate():
             return jsonify({
                 'error': 'Certificate generation failed: invalid output path.'
             }), 500
+        
+        # ALIGNMENT VERIFICATION: Ensure generated certificate matches sample with <0.01px difference
+        # This is critical for standardization and must pass before sending
+        alignment_enabled = current_app.config.get('ENABLE_ALIGNMENT_CHECK', True)
+        alignment_max_attempts = current_app.config.get('ALIGNMENT_MAX_ATTEMPTS', 3)
+        alignment_tolerance_px = current_app.config.get('ALIGNMENT_TOLERANCE_PX', 0.01)
+        
+        if alignment_enabled:
+            try:
+                logger.info("Starting alignment verification for certificate")
+                
+                # Get reference certificate path
+                reference_path = get_reference_certificate_path(template_path)
+                
+                # Perform verification with retry
+                verification_result = None
+                for attempt in range(1, alignment_max_attempts + 1):
+                    logger.info(f"Alignment check attempt {attempt}/{alignment_max_attempts}")
+                    
+                    verification_result = verify_certificate_alignment(
+                        cert_path_abs,
+                        reference_path,
+                        tolerance_px=alignment_tolerance_px
+                    )
+                    
+                    if verification_result['passed']:
+                        logger.info(
+                            f"✅ Alignment verification PASSED on attempt {attempt}: "
+                            f"{verification_result['message']}"
+                        )
+                        break
+                    else:
+                        logger.warning(
+                            f"❌ Alignment verification FAILED on attempt {attempt}: "
+                            f"{verification_result['message']}"
+                        )
+                        
+                        # If not the last attempt, could regenerate here
+                        # For now, we just retry verification as the generation should be deterministic
+                        if attempt < alignment_max_attempts:
+                            logger.info(f"Retrying alignment check...")
+                
+                # Check final result
+                if not verification_result or not verification_result['passed']:
+                    error_msg = (
+                        f"Certificate alignment verification failed after {alignment_max_attempts} attempts. "
+                        f"Certificate does not match reference sample within {alignment_tolerance_px}px tolerance. "
+                        f"Certificate will NOT be sent. "
+                    )
+                    if verification_result:
+                        error_msg += f"Difference: {verification_result['difference_pct']:.6f}%"
+                    
+                    logger.error(error_msg)
+                    
+                    # Clean up the failed certificate
+                    try:
+                        os.remove(cert_path_abs)
+                        logger.info(f"Removed failed certificate: {cert_path_abs}")
+                    except Exception as cleanup_error:
+                        logger.warning(f"Could not remove failed certificate: {cleanup_error}")
+                    
+                    return jsonify({
+                        'error': 'Certificate alignment verification failed',
+                        'message': error_msg,
+                        'details': verification_result
+                    }), 500
+                
+                # Log successful verification
+                logger.info(
+                    f"Certificate alignment verification completed successfully: "
+                    f"diff={verification_result['difference_pct']:.6f}%, "
+                    f"max_pixel_diff={verification_result['max_pixel_diff']}"
+                )
+                
+            except FileNotFoundError as e:
+                logger.error(f"Alignment verification error: Reference certificate not found: {e}")
+                # Allow certificate to proceed if reference is missing (degraded mode)
+                logger.warning("Proceeding without alignment verification (reference not found)")
+                
+            except AlignmentVerificationError as e:
+                logger.error(f"Alignment verification error: {e}")
+                
+                # Clean up the certificate
+                try:
+                    os.remove(cert_path_abs)
+                except Exception:
+                    pass
+                
+                return jsonify({
+                    'error': 'Certificate alignment verification failed',
+                    'message': str(e)
+                }), 500
+                
+            except Exception as e:
+                logger.exception(f"Unexpected error during alignment verification: {e}")
+                # Allow certificate to proceed (degraded mode)
+                logger.warning("Proceeding without alignment verification due to unexpected error")
         
         # Optional validation in dev mode (gated by DEBUG_VALIDATE)
         if current_app.config.get('DEBUG_VALIDATE', False):

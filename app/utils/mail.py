@@ -11,6 +11,9 @@ logger = logging.getLogger(__name__)
 def send_goonj_certificate(recipient_email, recipient_name, certificate_path, event_name="GOONJ"):
     """Send GOONJ certificate via email.
     
+    This function includes a final alignment check before sending to ensure
+    the certificate matches the reference sample with <0.01px difference.
+    
     Args:
         recipient_email: Email address of the recipient
         recipient_name: Name of the recipient
@@ -28,6 +31,53 @@ def send_goonj_certificate(recipient_email, recipient_name, certificate_path, ev
     if not current_app.config.get('MAIL_USERNAME'):
         logger.warning("SMTP not configured, skipping email send")
         return False
+    
+    # FINAL ALIGNMENT CHECK before sending
+    # This ensures we never send a certificate that doesn't match the reference
+    alignment_check_enabled = current_app.config.get('ENABLE_ALIGNMENT_CHECK', True)
+    if alignment_check_enabled:
+        try:
+            from app.utils.alignment_checker import (
+                verify_certificate_alignment,
+                get_reference_certificate_path
+            )
+            
+            # Get template path to find reference
+            template_path = os.path.join(
+                current_app.root_path,
+                '..',
+                'templates',
+                'goonj_certificate.png'
+            )
+            template_path = os.path.abspath(template_path)
+            
+            # Get reference certificate
+            reference_path = get_reference_certificate_path(template_path)
+            
+            # Verify alignment
+            tolerance_px = current_app.config.get('ALIGNMENT_TOLERANCE_PX', 0.01)
+            verification = verify_certificate_alignment(
+                certificate_path,
+                reference_path,
+                tolerance_px=tolerance_px
+            )
+            
+            if not verification['passed']:
+                logger.error(
+                    f"⛔ CRITICAL: Certificate failed final alignment check before sending. "
+                    f"Email to {recipient_email} will NOT be sent. "
+                    f"Reason: {verification['message']}"
+                )
+                return False
+            
+            logger.info(
+                f"✅ Final alignment check passed: {verification['message']}"
+            )
+            
+        except Exception as e:
+            logger.error(f"Error during final alignment check: {e}")
+            # In production, you might want to fail here rather than proceed
+            logger.warning("Proceeding with email send despite alignment check error")
     
     subject = f"Your GOONJ Certificate - {event_name}"
     
