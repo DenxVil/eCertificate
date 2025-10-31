@@ -33,6 +33,10 @@ class Config:
     
     # Certificate generation
     OUTPUT_FOLDER = os.getenv('OUTPUT_FOLDER', 'generated_certificates')
+    
+    # Validation settings (dev mode only)
+    DEBUG_VALIDATE = os.getenv('DEBUG_VALIDATE', 'False').lower() == 'true'
+    VALIDATE_TOLERANCE_PX = int(os.getenv('VALIDATE_TOLERANCE_PX', 3))
 
 
 class DevelopmentConfig(Config):
