@@ -153,7 +153,7 @@ class TestVerifyWithRetry:
             test_img.save(ref_path)
             
             # Should succeed on first attempt
-            result = verify_with_retry(gen_path, ref_path, max_attempts=3)
+            result = verify_with_retry(gen_path, ref_path, max_attempts=100)
             
             assert result['passed'] is True
             assert result['attempts'] == 1
@@ -172,9 +172,9 @@ class TestVerifyWithRetry:
             
             # Should fail after all attempts
             with pytest.raises(AlignmentVerificationError) as exc_info:
-                verify_with_retry(gen_path, ref_path, max_attempts=3)
+                verify_with_retry(gen_path, ref_path, max_attempts=100)
             
-            assert 'failed after 3 attempts' in str(exc_info.value)
+            assert 'failed after 100 attempts' in str(exc_info.value)
 
 
 class TestReferencePathResolution:
