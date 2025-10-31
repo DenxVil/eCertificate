@@ -267,6 +267,23 @@
 
 {% block extra_js %}
 <script>
+  /*
+   * SECURITY NOTE: This is a basic client-side access control mechanism.
+   * The password is intentionally simple (1234) and stored client-side for convenience.
+   * This is NOT suitable for protecting sensitive data or production environments.
+   * 
+   * Known limitations:
+   * - Password is visible in page source
+   * - Attempt counter can be reset by clearing localStorage
+   * - Users can bypass this by directly accessing /developer URL
+   * 
+   * For production use, implement:
+   * - Server-side authentication (Flask-Login, OAuth, etc.)
+   * - Session-based access control
+   * - Server-side attempt tracking
+   * - Environment-based password configuration
+   */
+  
   const CORRECT_PASSWORD = '1234';
   const MAX_ATTEMPTS = 150;
   const STORAGE_KEY = 'developerAttempts';
@@ -285,7 +302,8 @@
 
   function openDeveloperModal() {
     if (attempts >= MAX_ATTEMPTS) {
-      alert('Maximum attempts reached. Please contact the administrator.');
+      // Show error in a more user-friendly way
+      showMaxAttemptsError();
       return;
     }
     
@@ -364,5 +382,28 @@
 
   // Initialize display on page load
   updateAttemptsDisplay();
+
+  function showMaxAttemptsError() {
+    const errorContainer = document.createElement('div');
+    errorContainer.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+      z-index: 10000;
+      text-align: center;
+      max-width: 400px;
+    `;
+    errorContainer.innerHTML = `
+      <h3 style="color: #e74c3c; margin-bottom: 1rem;">🔒 Access Denied</h3>
+      <p style="margin-bottom: 1.5rem;">Maximum attempts reached. Please contact the administrator to reset your access.</p>
+      <button onclick="this.parentElement.remove()" style="padding: 0.5rem 1.5rem; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">OK</button>
+    `;
+    document.body.appendChild(errorContainer);
+  }
 </script>
 {% endblock %}
