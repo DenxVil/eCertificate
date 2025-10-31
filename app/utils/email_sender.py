@@ -1,8 +1,11 @@
 """Email utility for sending certificates."""
 from flask_mail import Mail, Message
+from flask import current_app
 import os
+import logging
 
 mail = Mail()
+logger = logging.getLogger(__name__)
 
 
 def send_certificate_email(recipient_email, recipient_name, event_name, certificate_path, retries=3):
@@ -33,6 +36,10 @@ AMA Certificate Generator Team
                 recipients=[recipient_email],
                 body=body
             )
+            
+            # Set sender if configured
+            if current_app.config.get('MAIL_DEFAULT_SENDER'):
+                msg.sender = current_app.config['MAIL_DEFAULT_SENDER']
 
             # Attach certificate
             if os.path.exists(certificate_path):
@@ -44,15 +51,17 @@ AMA Certificate Generator Team
                     )
 
             mail.send(msg)
+            logger.info(f"Certificate email sent successfully to {recipient_email}")
             return True
 
         except Exception as e:
-            # Print error and retry for transient issues
-            print(f"Attempt {attempt} - Error sending email to {recipient_email}: {str(e)}")
+            # Log error and retry for transient issues
+            logger.warning(f"Attempt {attempt}/{retries} - Error sending email to {recipient_email}: {str(e)}")
             if attempt < retries:
                 # exponential backoff
                 time.sleep(2 ** attempt)
             else:
+                logger.error(f"Failed to send certificate email to {recipient_email} after {retries} attempts")
                 return False
 
 
@@ -85,9 +94,14 @@ AMA Certificate Generator System
             body=body
         )
         
+        # Set sender if configured
+        if current_app.config.get('MAIL_DEFAULT_SENDER'):
+            msg.sender = current_app.config['MAIL_DEFAULT_SENDER']
+        
         mail.send(msg)
+        logger.info(f"Bulk notification email sent successfully to {admin_email}")
         return True
         
     except Exception as e:
-        print(f"Error sending notification email: {str(e)}")
+        logger.error(f"Error sending notification email to {admin_email}: {str(e)}")
         return False
