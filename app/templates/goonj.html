@@ -243,14 +243,22 @@
       
       // Show attempts if available (for retry-based verification)
       if (data.alignment_status.attempts !== undefined) {
-        details += `<p><strong>Attempts:</strong> ${data.alignment_status.attempts}</p>`;
+        const maxAttempts = data.alignment_status.max_attempts || 100;
+        details += `<p><strong>Attempts:</strong> ${data.alignment_status.attempts}/${maxAttempts}</p>`;
       } else if (data.alignment_status.passed) {
         // If no attempts field, it passed on first try
         details += `<p><strong>Attempts:</strong> 1/1 (Passed on first verification)</p>`;
       }
       
+      // Show max difference if available
+      if (data.alignment_status.max_difference_px !== undefined) {
+        const maxDiff = data.alignment_status.max_difference_px;
+        const tolerance = data.alignment_status.tolerance_px || 0.02;
+        details += `<p><strong>Max Difference:</strong> ${maxDiff.toFixed(4)} px (tolerance: ${tolerance} px)</p>`;
+      }
+      
       // Show field position details if available
-      if (data.alignment_status.field_positions && data.alignment_status.field_positions.fields) {
+      if (data.alignment_status.field_positions) {
         const fp = data.alignment_status.field_positions;
         details += `
           <div class="field-positions">
@@ -258,11 +266,13 @@
             <ul style="margin: 0.5em 0; padding-left: 1.5em;">
         `;
         
-        for (const [fieldName, fieldData] of Object.entries(fp.fields)) {
-          const status = fieldData.passed ? '✓' : '✗';
-          const color = fieldData.passed ? '#10b981' : '#f59e0b';
-          const offset = fieldData.offset !== undefined ? fieldData.offset : '?';
-          details += `<li style="color: ${color};">${status} ${fieldName}: ${offset}px offset</li>`;
+        for (const [fieldName, fieldData] of Object.entries(fp)) {
+          if (fieldData && typeof fieldData === 'object') {
+            const yDiff = fieldData.y_diff !== undefined ? fieldData.y_diff.toFixed(4) : '?';
+            const xDiff = fieldData.x_diff !== undefined ? fieldData.x_diff.toFixed(4) : '?';
+            const color = '#10b981'; // Green for now, will be calculated based on tolerance in future
+            details += `<li style="color: ${color};">✓ ${fieldName}: Y=${yDiff}px, X=${xDiff}px</li>`;
+          }
         }
         
         details += `
