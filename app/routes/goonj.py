@@ -295,9 +295,9 @@ def generate_certificate():
                     logger.warning(f"Sample certificate not found at {sample_cert_path}, skipping field alignment check")
                     alignment_status['message'] = "Alignment check skipped - reference sample not found"
                 else:
-                    # Get configuration
+                    # Get configuration (max_attempts already retrieved above as max_attempts_config)
                     tolerance_px = current_app.config.get('ALIGNMENT_TOLERANCE_PX', 0.02)
-                    max_attempts = current_app.config.get('ALIGNMENT_MAX_ATTEMPTS', 150)
+                    max_attempts = max_attempts_config
                     
                     # Generate a session ID for progress tracking
                     import uuid
