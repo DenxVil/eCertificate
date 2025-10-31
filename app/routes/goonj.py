@@ -9,6 +9,7 @@ from app.utils.alignment_checker import (
 )
 from app.utils.auto_alignment_fixer import ensure_ditto_alignment
 from app.utils.universal_alignment_checker import verify_all_certificates
+from app.utils.field_position_verifier import verify_field_positions
 import os
 import io
 import csv
@@ -76,19 +77,19 @@ def check_smtp_configuration():
     mail_sender = current_app.config.get('MAIL_DEFAULT_SENDER')
     
     if not mail_server:
-        issues.append("MAIL_SERVER not configured in .env file")
+        issues.append("MAIL_SERVER not configured")
     
     if not mail_port:
-        issues.append("MAIL_PORT not configured in .env file")
+        issues.append("MAIL_PORT not configured")
     
     if not mail_username:
-        issues.append("MAIL_USERNAME (email address) not configured in .env file")
+        issues.append("MAIL_USERNAME (email address) not configured")
     
     if not mail_password:
-        issues.append("MAIL_PASSWORD (app password) not configured in .env file")
+        issues.append("MAIL_PASSWORD (app password) not configured")
     
     if not mail_sender:
-        issues.append("MAIL_DEFAULT_SENDER not configured in .env file")
+        issues.append("MAIL_DEFAULT_SENDER not configured")
     
     configured = len(issues) == 0
     
@@ -253,29 +254,28 @@ def generate_certificate():
             }), 500
         
         # ALIGNMENT VERIFICATION: Verify ALL generated certificates
-        # This ensures consistent dimensions, format, and template configuration
+        # This ensures consistent dimensions, format, template configuration, and field positions
         alignment_enabled = current_app.config.get('ENABLE_ALIGNMENT_CHECK', True)
         alignment_status = {
             'enabled': alignment_enabled,
             'passed': True,
             'message': 'Alignment verification skipped (disabled)',
-            'details': {}
+            'details': {},
+            'field_positions': {}
         }
         
         if alignment_enabled:
             try:
                 logger.info("Running universal alignment verification for certificate")
                 
-                # Universal verification works for ALL certificates
+                # Step 1: Universal verification (dimensions, format, template)
                 verification_result = verify_all_certificates(cert_path_abs, template_path)
                 
                 alignment_status['passed'] = verification_result['passed']
                 alignment_status['details'] = verification_result['checks']
-                alignment_status['message'] = verification_result['message']
                 
-                if verification_result['passed']:
-                    logger.info(f"✅ Alignment verification PASSED: {verification_result['message']}")
-                else:
+                if not verification_result['passed']:
+                    alignment_status['message'] = verification_result['message']
                     logger.error(f"❌ Alignment verification FAILED: {verification_result['message']}")
                     
                     # Clean up the failed certificate
@@ -291,6 +291,47 @@ def generate_certificate():
                         'message': verification_result['message'],
                         'alignment_status': alignment_status
                     }), 500
+                
+                # Step 2: Field position verification (Y-coordinate alignment)
+                # Compare with sample_certificate.png to ensure field vertical positions match
+                sample_cert_path = os.path.join(
+                    current_app.root_path,
+                    '..',
+                    'templates',
+                    'sample_certificate.png'
+                )
+                sample_cert_path = os.path.abspath(sample_cert_path)
+                
+                if os.path.exists(sample_cert_path):
+                    try:
+                        # Get field position tolerance from config
+                        tolerance_px = current_app.config.get('FIELD_POSITION_TOLERANCE_PX', 2)
+                        
+                        field_position_result = verify_field_positions(
+                            cert_path_abs,
+                            sample_cert_path,
+                            tolerance_px=tolerance_px
+                        )
+                        
+                        alignment_status['field_positions'] = field_position_result
+                        
+                        if field_position_result['passed']:
+                            logger.info(f"✅ Field position verification PASSED: {field_position_result['message']}")
+                            alignment_status['message'] = f"All checks passed. {field_position_result['message']}"
+                        else:
+                            logger.warning(f"⚠️ Field position verification FAILED: {field_position_result['message']}")
+                            # Don't fail the certificate, just log warning
+                            # This allows for minor rendering differences while still alerting
+                            alignment_status['message'] = f"Dimension checks passed. Field positions: {field_position_result['message']}"
+                    except Exception as e:
+                        logger.warning(f"Field position verification error (non-fatal): {e}")
+                        alignment_status['field_positions'] = {'error': str(e)}
+                        alignment_status['message'] = f"All checks passed. Field position check skipped: {str(e)}"
+                else:
+                    logger.warning(f"Sample certificate not found at {sample_cert_path}, skipping field position check")
+                    alignment_status['message'] = "All checks passed (field position check skipped - no sample reference)"
+                
+                logger.info(f"✅ Certificate verification completed: {alignment_status['message']}")
                     
             except Exception as e:
                 logger.exception(f"Unexpected error during alignment verification: {e}")
@@ -505,6 +546,7 @@ def system_status():
     Returns JSON with:
     - template_exists: bool
     - smtp_configured: bool
+    - smtp_status_details: dict with configuration details and issues
     - engine_status: "operational" | "degraded" | "error"
     - latency_ms: int (approximate internal latency)
     - active_jobs_count: int
@@ -533,8 +575,9 @@ def system_status():
         template_path = os.path.abspath(template_path)
         template_exists = os.path.exists(template_path)
         
-        # Check SMTP
-        smtp_configured = bool(current_app.config.get('MAIL_USERNAME'))
+        # Check SMTP with detailed status
+        smtp_status = check_smtp_configuration()
+        smtp_configured = smtp_status['configured']
         
         # Count active jobs (pending or processing)
         try:
@@ -561,6 +604,7 @@ def system_status():
         status_data = {
             'template_exists': template_exists,
             'smtp_configured': smtp_configured,
+            'smtp_status_details': smtp_status,  # Include detailed SMTP status
             'engine_status': engine_status,
             'latency_ms': latency_ms,
             'active_jobs_count': active_jobs,
@@ -579,6 +623,11 @@ def system_status():
         return jsonify({
             'template_exists': False,
             'smtp_configured': False,
+            'smtp_status_details': {
+                'configured': False,
+                'message': 'Error checking SMTP configuration',
+                'issues': ['System error occurred']
+            },
             'engine_status': 'error',
             'latency_ms': int((time.time() - start_time) * 1000),
             'active_jobs_count': 0,
