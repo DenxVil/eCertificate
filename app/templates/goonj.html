@@ -288,7 +288,7 @@
         `;
         // Show attempts if available
         if (data.email_status.attempts !== undefined) {
-          details += `<p><strong>Delivery attempts:</strong> ${data.email_status.attempts}/150</p>`;
+          details += `<p><strong>Delivery attempts:</strong> ${data.email_status.attempts}/{{ email_max_retries }}</p>`;
         }
       } else if (data.email_status.smtp_config && !data.email_status.smtp_config.configured) {
         details += `
@@ -308,7 +308,7 @@
         `;
         // Show attempts if available
         if (data.email_status.attempts !== undefined) {
-          details += `<p><strong>Failed after:</strong> ${data.email_status.attempts}/150 attempts</p>`;
+          details += `<p><strong>Failed after:</strong> ${data.email_status.attempts}/{{ email_max_retries }} attempts</p>`;
         }
         details += `<p><strong>Error:</strong> ${data.email_status.error || 'Unknown error'}</p>`;
       }

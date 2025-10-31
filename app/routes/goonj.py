@@ -24,7 +24,8 @@ logger = logging.getLogger(__name__)
 @goonj_bp.route('/', methods=['GET'])
 def goonj_page():
     """Render the GOONJ UI page."""
-    return render_template('goonj.html')
+    email_max_retries = current_app.config.get('EMAIL_MAX_RETRIES', 150)
+    return render_template('goonj.html', email_max_retries=email_max_retries)
 
 
 def parse_csv_file(file_storage):
