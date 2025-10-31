@@ -289,7 +289,7 @@ def generate_certificate():
                 
                 return jsonify({
                     'error': 'Certificate alignment verification failed',
-                    'message': str(e)
+                    'message': 'The generated certificate does not match the reference sample within the required tolerance. Please contact support if this issue persists.'
                 }), 500
                 
             except Exception as e:
