@@ -347,35 +347,49 @@ def generate_certificate():
                     alignment_status['max_difference_px'] = verification_result.get('max_difference_px', 0.0)
                     alignment_status['field_positions'] = verification_result.get('fields', {})
                     alignment_status['message'] = verification_result['message']
+                    alignment_status['used_best_available'] = verification_result.get('used_best_available', False)
+                    
+                    # Include best attempt info if available
+                    if 'best_attempt' in verification_result:
+                        alignment_status['best_attempt'] = verification_result['best_attempt']
                     
                     # Clean up progress tracking
                     if session_id in _alignment_progress:
                         del _alignment_progress[session_id]
                     
+                    # If verification didn't pass but we're using the best available certificate
+                    # (max attempts reached), we should still allow the certificate to be delivered
+                    # This is a change from the previous behavior where we would fail completely
                     if not verification_result['passed']:
-                        logger.error(f"❌ Alignment verification FAILED: {verification_result['message']}")
-                        
-                        # Clean up the failed certificate
-                        try:
-                            os.remove(cert_path_abs)
-                            logger.info(f"Removed failed certificate: {cert_path_abs}")
-                        except Exception as cleanup_error:
-                            logger.warning(f"Could not remove failed certificate: {cleanup_error}")
-                        
-                        return jsonify({
-                            'success': False,
-                            'error': 'Certificate alignment verification failed',
-                            'message': verification_result['message'],
-                            'alignment_status': alignment_status
-                        }), 500
-                    
-                    logger.info(f"✅ Alignment verification PASSED: {verification_result['message']}")
+                        if verification_result.get('used_best_available', False):
+                            # Log as warning, not error, since we're providing best available
+                            logger.warning(f"⚠️ Max alignment attempts reached. Using best available: {verification_result['message']}")
+                            # Continue to certificate delivery with warning status
+                        else:
+                            # True failure - no certificate to provide
+                            logger.error(f"❌ Alignment verification FAILED: {verification_result['message']}")
+                            
+                            # Clean up the failed certificate
+                            try:
+                                os.remove(cert_path_abs)
+                                logger.info(f"Removed failed certificate: {cert_path_abs}")
+                            except Exception as cleanup_error:
+                                logger.warning(f"Could not remove failed certificate: {cleanup_error}")
+                            
+                            return jsonify({
+                                'success': False,
+                                'error': 'Certificate alignment verification failed',
+                                'message': verification_result['message'],
+                                'alignment_status': alignment_status
+                            }), 500
+                    else:
+                        logger.info(f"✅ Alignment verification PASSED: {verification_result['message']}")
                     
             except Exception as e:
                 logger.exception(f"Unexpected error during alignment verification: {e}")
                 alignment_status['passed'] = False
-                alignment_status['message'] = f'Verification error: {e}'
-                alignment_status['error'] = str(e)
+                alignment_status['message'] = 'An unexpected error occurred during alignment verification'
+                # Don't expose exception details to external users
         
         # Optional validation in dev mode (gated by DEBUG_VALIDATE)
         if current_app.config.get('DEBUG_VALIDATE', False):

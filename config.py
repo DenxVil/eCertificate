@@ -48,6 +48,10 @@ class Config:
     # Validation settings (dev mode only)
     DEBUG_VALIDATE = os.getenv('DEBUG_VALIDATE', 'True').lower() == 'true'
     VALIDATE_TOLERANCE_PX = int(os.getenv('VALIDATE_TOLERANCE_PX', 3))
+    
+    # Azure Application Insights (optional)
+    APPINSIGHTS_INSTRUMENTATION_KEY = os.getenv('APPINSIGHTS_INSTRUMENTATION_KEY')
+    APPINSIGHTS_CONNECTION_STRING = os.getenv('APPINSIGHTS_CONNECTION_STRING')
 
 
 class DevelopmentConfig(Config):

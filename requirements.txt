@@ -15,3 +15,5 @@ pytesseract
 pdf2image
 opencv-python
 numpy
+opencensus-ext-azure
+opencensus-ext-flask

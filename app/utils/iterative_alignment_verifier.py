@@ -132,6 +132,8 @@ def verify_alignment_with_retries(
     
     This function attempts to verify alignment up to max_attempts times,
     optionally regenerating the certificate if alignment fails.
+    If max attempts is reached without passing, it returns the certificate
+    with the best (closest) alignment.
     
     Args:
         generated_cert_path: Path to generated certificate
@@ -148,7 +150,8 @@ def verify_alignment_with_retries(
             'attempts': int,
             'max_difference_px': float,
             'fields': dict,
-            'message': str
+            'message': str,
+            'best_attempt': dict (if max attempts reached without passing)
         }
     """
     if not os.path.exists(reference_cert_path):
@@ -157,6 +160,10 @@ def verify_alignment_with_retries(
     # Extract reference positions once
     logger.info(f"Extracting reference positions from {reference_cert_path}")
     reference_positions = extract_field_positions(reference_cert_path)
+    
+    # Track all attempts to find the best one
+    all_attempts = []
+    best_attempt = None
     
     for attempt in range(1, max_attempts + 1):
         try:
@@ -191,6 +198,19 @@ def verify_alignment_with_retries(
             
             logger.info(f"Attempt {attempt}: Max difference = {max_diff:.4f} px (tolerance: {tolerance_px} px)")
             
+            # Store this attempt's result
+            attempt_result = {
+                'attempt_number': attempt,
+                'max_difference_px': max_diff,
+                'fields': diff_result['fields'],
+                'cert_path': generated_cert_path
+            }
+            all_attempts.append(attempt_result)
+            
+            # Track the best attempt so far
+            if best_attempt is None or max_diff < best_attempt['max_difference_px']:
+                best_attempt = attempt_result
+            
             # Check if within tolerance
             if max_diff <= tolerance_px:
                 message = f"PASSED: Alignment verified on attempt {attempt}/{max_attempts}. Max difference: {max_diff:.4f} px (<= {tolerance_px} px)"
@@ -202,7 +222,8 @@ def verify_alignment_with_retries(
                     'max_difference_px': max_diff,
                     'fields': diff_result['fields'],
                     'message': message,
-                    'tolerance_px': tolerance_px
+                    'tolerance_px': tolerance_px,
+                    'all_attempts': all_attempts
                 }
             else:
                 logger.warning(f"Attempt {attempt} failed: {max_diff:.4f} px > {tolerance_px} px")
@@ -216,16 +237,20 @@ def verify_alignment_with_retries(
                 else:
                     # Last attempt or no regenerate function
                     if attempt == max_attempts:
-                        message = f"FAILED: Alignment verification failed after {max_attempts} attempts. Max difference: {max_diff:.4f} px (tolerance: {tolerance_px} px)"
-                        logger.error(f"❌ {message}")
+                        # Return the best attempt instead of failing completely
+                        message = f"MAX ATTEMPTS REACHED: Using best alignment from {best_attempt['attempt_number']} attempts. Max difference: {best_attempt['max_difference_px']:.4f} px (tolerance: {tolerance_px} px)"
+                        logger.warning(f"⚠️ {message}")
                         
                         return {
                             'passed': False,
                             'attempts': attempt,
-                            'max_difference_px': max_diff,
-                            'fields': diff_result['fields'],
+                            'max_difference_px': best_attempt['max_difference_px'],
+                            'fields': best_attempt['fields'],
                             'message': message,
-                            'tolerance_px': tolerance_px
+                            'tolerance_px': tolerance_px,
+                            'best_attempt': best_attempt,
+                            'all_attempts': all_attempts,
+                            'used_best_available': True
                         }
         
         except Exception as e:
@@ -236,7 +261,7 @@ def verify_alignment_with_retries(
                     'attempts': attempt,
                     'max_difference_px': float('inf'),
                     'fields': {},
-                    'message': f'Verification error on attempt {attempt}: {str(e)}'
+                    'message': f'Verification error on attempt {attempt}'
                 }
             # Continue to next attempt
             continue

@@ -15,6 +15,38 @@ logger = logging.getLogger(__name__)
 # Initialize Flask-Compress for response compression
 compress = Compress()
 
+# Azure Application Insights initialization (conditional)
+azure_logger = None
+try:
+    from opencensus.ext.azure.log_exporter import AzureLogHandler
+    from opencensus.ext.flask.flask_middleware import FlaskMiddleware
+    
+    APPINSIGHTS_INSTRUMENTATION_KEY = os.getenv('APPINSIGHTS_INSTRUMENTATION_KEY')
+    APPINSIGHTS_CONNECTION_STRING = os.getenv('APPINSIGHTS_CONNECTION_STRING')
+    
+    if APPINSIGHTS_INSTRUMENTATION_KEY or APPINSIGHTS_CONNECTION_STRING:
+        # Configure Azure logging
+        azure_handler_config = {}
+        if APPINSIGHTS_CONNECTION_STRING:
+            azure_handler_config['connection_string'] = APPINSIGHTS_CONNECTION_STRING
+        elif APPINSIGHTS_INSTRUMENTATION_KEY:
+            azure_handler_config['instrumentation_key'] = APPINSIGHTS_INSTRUMENTATION_KEY
+        
+        azure_handler = AzureLogHandler(**azure_handler_config)
+        azure_handler.setLevel(logging.INFO)
+        
+        # Add Azure handler to root logger
+        logging.getLogger().addHandler(azure_handler)
+        
+        logger.info("Azure Application Insights logging initialized")
+        azure_logger = azure_handler
+    else:
+        logger.info("Azure Application Insights not configured (no APPINSIGHTS_INSTRUMENTATION_KEY or APPINSIGHTS_CONNECTION_STRING)")
+except ImportError:
+    logger.info("Azure Application Insights not available (opencensus-ext-azure not installed)")
+except Exception as e:
+    logger.warning(f"Failed to initialize Azure Application Insights: {e}")
+
 
 def create_app(config_name='default'):
     """Create and configure the Flask application.
@@ -29,6 +61,22 @@ def create_app(config_name='default'):
     
     # Load configuration
     app.config.from_object(config_module.config[config_name])
+    
+    # Initialize Azure Application Insights middleware if configured
+    if azure_logger is not None:
+        try:
+            from opencensus.ext.flask.flask_middleware import FlaskMiddleware
+            
+            middleware_config = {}
+            if os.getenv('APPINSIGHTS_CONNECTION_STRING'):
+                middleware_config['connection_string'] = os.getenv('APPINSIGHTS_CONNECTION_STRING')
+            elif os.getenv('APPINSIGHTS_INSTRUMENTATION_KEY'):
+                middleware_config['instrumentation_key'] = os.getenv('APPINSIGHTS_INSTRUMENTATION_KEY')
+            
+            FlaskMiddleware(app, exporter=None, **middleware_config)
+            logger.info("Azure Application Insights middleware initialized")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Azure middleware: {e}")
     
     # Use SQLite database
     app.config["SQLALCHEMY_DATABASE_URI"] = get_database_uri()
