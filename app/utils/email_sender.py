@@ -9,11 +9,22 @@ mail = Mail()
 logger = logging.getLogger(__name__)
 
 
-def send_certificate_email(recipient_email, recipient_name, event_name, certificate_path, retries=3):
+def send_certificate_email(recipient_email, recipient_name, event_name, certificate_path, retries=None):
     """Send certificate via email with retries.
 
-    Returns True if sent, False otherwise. Retries a few times on transient errors.
+    Returns True if sent, False otherwise. Retries a configured number of times on transient errors.
+    
+    Args:
+        recipient_email: Email address of recipient
+        recipient_name: Name of recipient
+        event_name: Name of the event
+        certificate_path: Path to certificate file
+        retries: Number of retry attempts (defaults to EMAIL_MAX_RETRIES from config, or 150)
     """
+    # Get retry count from config if not specified
+    if retries is None:
+        retries = current_app.config.get('EMAIL_MAX_RETRIES', 150)
+    
     subject = f"Certificate of Participation - {event_name}"
 
     body = f"""
