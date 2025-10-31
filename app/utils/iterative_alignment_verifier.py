@@ -123,7 +123,7 @@ def verify_alignment_with_retries(
     generated_cert_path: str,
     reference_cert_path: str,
     tolerance_px: float = 0.02,
-    max_attempts: int = 100,
+    max_attempts: int = 30,
     regenerate_func: Optional[callable] = None,
     progress_callback: Optional[callable] = None
 ) -> Dict[str, Any]:
