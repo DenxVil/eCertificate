@@ -266,10 +266,12 @@ def generate_certificate():
         # ALIGNMENT VERIFICATION: Iterative verification with retry logic
         # This ensures field positions match Sample_certificate.png within 0.02px tolerance
         alignment_enabled = current_app.config.get('ENABLE_ALIGNMENT_CHECK', True)
+        max_attempts_config = current_app.config.get('ALIGNMENT_MAX_ATTEMPTS', 150)
         alignment_status = {
             'enabled': alignment_enabled,
             'passed': True,
             'attempts': 1,
+            'max_attempts': max_attempts_config,
             'message': 'Alignment verification skipped (disabled)',
             'details': {},
             'field_positions': {},
@@ -295,35 +297,53 @@ def generate_certificate():
                 else:
                     # Get configuration
                     tolerance_px = current_app.config.get('ALIGNMENT_TOLERANCE_PX', 0.02)
-                    max_attempts = current_app.config.get('ALIGNMENT_MAX_ATTEMPTS', 100)
+                    max_attempts = current_app.config.get('ALIGNMENT_MAX_ATTEMPTS', 150)
                     
                     # Generate a session ID for progress tracking
                     import uuid
                     session_id = str(uuid.uuid4())
                     
                     # Progress callback
-                    def progress_callback(attempt, max_attempts):
+                    def progress_callback(attempt, max_attempts_val):
                         global _alignment_progress
                         _alignment_progress[session_id] = {
                             'attempt': attempt,
-                            'max_attempts': max_attempts,
+                            'max_attempts': max_attempts_val,
                             'status': 'verifying',
                             'timestamp': time.time()
                         }
                     
-                    # For single-shot generation (no regeneration), just verify once
-                    # The iterative retry is mainly for batch generation
+                    # Regenerate function that recreates the certificate
+                    def regenerate_certificate():
+                        """Regenerate the certificate for retry attempts."""
+                        logger.info(f"Regenerating certificate for alignment retry...")
+                        # Delete the old certificate if it exists
+                        if os.path.exists(cert_path_abs):
+                            try:
+                                os.remove(cert_path_abs)
+                            except Exception as e:
+                                logger.warning(f"Could not remove old certificate: {e}")
+                        
+                        # Regenerate using the renderer
+                        new_cert_path = renderer.render(participant_data, output_format=output_format)
+                        return new_cert_path
+                    
+                    # Iterative alignment verification with automatic retry and regeneration
+                    # This will automatically retry up to max_attempts times (default: 150)
+                    # regenerating the certificate each time until alignment is achieved
                     verification_result = verify_alignment_with_retries(
                         cert_path_abs,
                         sample_cert_path,
                         tolerance_px=tolerance_px,
-                        max_attempts=1,  # Single verification for now
-                        regenerate_func=None,
+                        max_attempts=max_attempts,
+                        regenerate_func=regenerate_certificate,
                         progress_callback=progress_callback
                     )
                     
                     alignment_status['passed'] = verification_result['passed']
                     alignment_status['attempts'] = verification_result['attempts']
+                    alignment_status['max_attempts'] = max_attempts
+                    alignment_status['tolerance_px'] = tolerance_px
                     alignment_status['max_difference_px'] = verification_result.get('max_difference_px', 0.0)
                     alignment_status['field_positions'] = verification_result.get('fields', {})
                     alignment_status['message'] = verification_result['message']
