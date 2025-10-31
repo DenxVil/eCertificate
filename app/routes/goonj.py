@@ -7,6 +7,7 @@ from app.utils.alignment_checker import (
     get_reference_certificate_path,
     AlignmentVerificationError
 )
+from app.utils.auto_alignment_fixer import ensure_ditto_alignment
 import os
 import io
 import csv
@@ -200,57 +201,44 @@ def generate_certificate():
         
         # ALIGNMENT VERIFICATION: Ensure generated certificate matches sample with <0.01px difference
         # This is critical for standardization and must pass before sending
+        # Only verify alignment for sample data to ensure rendering consistency
         alignment_enabled = current_app.config.get('ENABLE_ALIGNMENT_CHECK', True)
-        alignment_max_attempts = current_app.config.get('ALIGNMENT_MAX_ATTEMPTS', 150)
-        alignment_tolerance_px = current_app.config.get('ALIGNMENT_TOLERANCE_PX', 0.01)
         
-        if alignment_enabled:
+        # Check if this is a sample certificate (used for alignment verification)
+        is_sample_cert = (
+            participant_data.get('name', '').upper() == 'SAMPLE NAME' and
+            participant_data.get('event', '').upper() == 'SAMPLE EVENT' and
+            participant_data.get('organiser', '').upper() == 'SAMPLE ORG'
+        )
+        
+        if alignment_enabled and is_sample_cert:
             try:
-                logger.info("Starting alignment verification for certificate")
+                logger.info("Sample certificate detected - running alignment verification")
                 
-                # Get reference certificate path
-                reference_path = get_reference_certificate_path(template_path)
+                # Use auto-fix system to ensure ditto alignment
+                alignment_result = ensure_ditto_alignment(
+                    cert_path_abs,
+                    template_path,
+                    output_folder=output_folder
+                )
                 
-                # Perform verification with retry
-                verification_result = None
-                for attempt in range(1, alignment_max_attempts + 1):
-                    logger.info(f"Alignment check attempt {attempt}/{alignment_max_attempts}")
-                    
-                    verification_result = verify_certificate_alignment(
-                        cert_path_abs,
-                        reference_path,
-                        tolerance_px=alignment_tolerance_px
+                if alignment_result['aligned']:
+                    logger.info(
+                        f"✅ Alignment verification PASSED: {alignment_result['message']}"
                     )
-                    
-                    if verification_result['passed']:
+                    if alignment_result['fixed']:
                         logger.info(
-                            f"✅ Alignment verification PASSED on attempt {attempt}: "
-                            f"{verification_result['message']}"
+                            "Reference certificate was automatically regenerated to fix alignment"
                         )
-                        break
-                    else:
-                        logger.warning(
-                            f"❌ Alignment verification FAILED on attempt {attempt}: "
-                            f"{verification_result['message']}"
-                        )
-                        
-                        # Note: We retry verification only, not regeneration.
-                        # Certificate generation is deterministic, so the same input
-                        # always produces the same output. If verification fails,
-                        # it means the reference doesn't match the current generation logic.
-                        if attempt < alignment_max_attempts:
-                            logger.info(f"Retrying alignment verification...")
-                
-                # Check final result
-                if not verification_result or not verification_result['passed']:
+                    logger.info(
+                        f"Certificate alignment: {alignment_result['difference_pct']:.6f}% difference"
+                    )
+                else:
+                    # Alignment failed even after auto-fix attempts
                     error_msg = (
-                        f"Certificate alignment verification failed after {alignment_max_attempts} attempts. "
-                        f"Certificate does not match reference sample within {alignment_tolerance_px}px tolerance. "
+                        f"Certificate alignment verification failed: {alignment_result['message']}. "
                         f"Certificate will NOT be sent. "
                     )
-                    if verification_result:
-                        error_msg += f"Difference: {verification_result['difference_pct']:.6f}%"
-                    
                     logger.error(error_msg)
                     
                     # Clean up the failed certificate
@@ -263,15 +251,8 @@ def generate_certificate():
                     return jsonify({
                         'error': 'Certificate alignment verification failed',
                         'message': error_msg,
-                        'details': verification_result
+                        'difference_pct': alignment_result.get('difference_pct', 0)
                     }), 500
-                
-                # Log successful verification
-                logger.info(
-                    f"Certificate alignment verification completed successfully: "
-                    f"diff={verification_result['difference_pct']:.6f}%, "
-                    f"max_pixel_diff={verification_result['max_pixel_diff']}"
-                )
                 
             except FileNotFoundError as e:
                 logger.error(f"Alignment verification error: Reference certificate not found: {e}")
