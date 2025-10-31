@@ -4,12 +4,13 @@ from flask_mail import Message
 from app.utils.email_sender import mail
 import os
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
 
-def send_goonj_certificate(recipient_email, recipient_name, certificate_path, event_name="GOONJ"):
-    """Send GOONJ certificate via email.
+def send_goonj_certificate(recipient_email, recipient_name, certificate_path, event_name="GOONJ", max_retries=None):
+    """Send GOONJ certificate via email with configurable retry attempts.
     
     This function includes a final alignment check before sending to ensure
     the certificate matches the reference sample with <0.01px difference.
@@ -19,18 +20,23 @@ def send_goonj_certificate(recipient_email, recipient_name, certificate_path, ev
         recipient_name: Name of the recipient
         certificate_path: Path to the certificate file
         event_name: Name of the event (default: "GOONJ")
+        max_retries: Maximum number of retry attempts (defaults to EMAIL_MAX_RETRIES from config, or 150)
     
     Returns:
-        True if email sent successfully, False otherwise
+        Dictionary with 'success' (bool) and 'attempts' (int) keys
     """
     if not recipient_email:
         logger.info("No email address provided, skipping email send")
-        return False
+        return {'success': False, 'attempts': 0}
     
     # Check if SMTP is configured
     if not current_app.config.get('MAIL_USERNAME'):
         logger.warning("SMTP not configured, skipping email send")
-        return False
+        return {'success': False, 'attempts': 0}
+    
+    # Get retry count from config if not specified
+    if max_retries is None:
+        max_retries = current_app.config.get('EMAIL_MAX_RETRIES', 150)
     
     # FINAL ALIGNMENT CHECK before sending
     # This ensures we never send a certificate that doesn't match the reference
@@ -68,7 +74,7 @@ def send_goonj_certificate(recipient_email, recipient_name, certificate_path, ev
                     f"Email to {recipient_email} will NOT be sent. "
                     f"Reason: {verification['message']}"
                 )
-                return False
+                return {'success': False, 'attempts': 0}
             
             logger.info(
                 f"✅ Final alignment check passed: {verification['message']}"
@@ -93,42 +99,51 @@ Best regards,
 AMA Certificate Team
 """
     
-    try:
-        # Validate certificate path exists and is a file (security check)
-        cert_path_abs = os.path.abspath(certificate_path)
-        if not os.path.exists(cert_path_abs) or not os.path.isfile(cert_path_abs):
-            logger.error(f"Certificate file not found or not a file: {cert_path_abs}")
-            return False
-        
-        # Additional security: ensure it's within the expected output folder
-        output_folder = current_app.config.get('OUTPUT_FOLDER', 'generated_certificates')
-        output_folder_abs = os.path.abspath(output_folder)
-        if not cert_path_abs.startswith(output_folder_abs):
-            logger.error(f"Certificate path {cert_path_abs} is outside output folder {output_folder_abs}")
-            return False
-        
-        msg = Message(
-            subject=subject,
-            recipients=[recipient_email],
-            body=body
-        )
-        
-        # Set sender if configured
-        if current_app.config.get('MAIL_DEFAULT_SENDER'):
-            msg.sender = current_app.config['MAIL_DEFAULT_SENDER']
-        
-        # Attach certificate
-        with open(cert_path_abs, 'rb') as cert_file:
-            msg.attach(
-                filename=os.path.basename(cert_path_abs),
-                content_type='image/png',
-                data=cert_file.read()
+    # Validate certificate path exists and is a file (security check)
+    cert_path_abs = os.path.abspath(certificate_path)
+    if not os.path.exists(cert_path_abs) or not os.path.isfile(cert_path_abs):
+        logger.error(f"Certificate file not found or not a file: {cert_path_abs}")
+        return {'success': False, 'attempts': 0}
+    
+    # Additional security: ensure it's within the expected output folder
+    output_folder = current_app.config.get('OUTPUT_FOLDER', 'generated_certificates')
+    output_folder_abs = os.path.abspath(output_folder)
+    if not cert_path_abs.startswith(output_folder_abs):
+        logger.error(f"Certificate path {cert_path_abs} is outside output folder {output_folder_abs}")
+        return {'success': False, 'attempts': 0}
+    
+    # Retry loop for sending email
+    for attempt in range(1, max_retries + 1):
+        try:
+            msg = Message(
+                subject=subject,
+                recipients=[recipient_email],
+                body=body
             )
-        
-        mail.send(msg)
-        logger.info(f"Certificate email sent successfully to {recipient_email}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Failed to send certificate email to {recipient_email}: {str(e)}", exc_info=True)
-        return False
+            
+            # Set sender if configured
+            if current_app.config.get('MAIL_DEFAULT_SENDER'):
+                msg.sender = current_app.config['MAIL_DEFAULT_SENDER']
+            
+            # Attach certificate
+            with open(cert_path_abs, 'rb') as cert_file:
+                msg.attach(
+                    filename=os.path.basename(cert_path_abs),
+                    content_type='image/png',
+                    data=cert_file.read()
+                )
+            
+            mail.send(msg)
+            logger.info(f"Certificate email sent successfully to {recipient_email} (attempt {attempt}/{max_retries})")
+            return {'success': True, 'attempts': attempt}
+            
+        except Exception as e:
+            logger.warning(f"Attempt {attempt}/{max_retries} - Error sending email to {recipient_email}: {str(e)}")
+            if attempt < max_retries:
+                # Exponential backoff with cap at 60 seconds
+                wait_time = min(2 ** min(attempt, 6), 60)
+                logger.info(f"Waiting {wait_time}s before retry...")
+                time.sleep(wait_time)
+            else:
+                logger.error(f"Failed to send certificate email to {recipient_email} after {max_retries} attempts")
+                return {'success': False, 'attempts': attempt}

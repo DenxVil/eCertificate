@@ -386,19 +386,20 @@ def generate_certificate():
             if smtp_config['configured']:
                 try:
                     event_name = participant_data.get('event', 'GOONJ')
-                    email_sent = send_goonj_certificate(
+                    email_result = send_goonj_certificate(
                         recipient_email=participant_email,
                         recipient_name=participant_data['name'],
                         certificate_path=cert_path_abs,
                         event_name=event_name
                     )
-                    email_status['sent'] = email_sent
+                    email_status['sent'] = email_result['success']
+                    email_status['attempts'] = email_result['attempts']
                     
-                    if email_sent:
-                        logger.info(f"Certificate emailed successfully to {participant_email}")
+                    if email_result['success']:
+                        logger.info(f"Certificate emailed successfully to {participant_email} after {email_result['attempts']} attempt(s)")
                     else:
-                        email_status['error'] = 'Email sending failed. Check server logs for details.'
-                        logger.error(f"Failed to send email to {participant_email}")
+                        email_status['error'] = f'Email sending failed after {email_result["attempts"]} attempt(s). Check server logs for details.'
+                        logger.error(f"Failed to send email to {participant_email} after {email_result['attempts']} attempt(s)")
                         
                 except Exception as e:
                     email_status['error'] = f'Email error: {str(e)}'

@@ -286,6 +286,10 @@
           <p><strong>Status:</strong> ✅ Sent successfully</p>
           <p><strong>Recipient:</strong> ${data.participant.email}</p>
         `;
+        // Show attempts if available
+        if (data.email_status.attempts !== undefined) {
+          details += `<p><strong>Delivery attempts:</strong> ${data.email_status.attempts}/150</p>`;
+        }
       } else if (data.email_status.smtp_config && !data.email_status.smtp_config.configured) {
         details += `
           <p><strong>Status:</strong> ⚠️ Not sent - SMTP not configured</p>
@@ -301,8 +305,12 @@
       } else {
         details += `
           <p><strong>Status:</strong> ❌ Failed to send</p>
-          <p><strong>Error:</strong> ${data.email_status.error || 'Unknown error'}</p>
         `;
+        // Show attempts if available
+        if (data.email_status.attempts !== undefined) {
+          details += `<p><strong>Failed after:</strong> ${data.email_status.attempts}/150 attempts</p>`;
+        }
+        details += `<p><strong>Error:</strong> ${data.email_status.error || 'Unknown error'}</p>`;
       }
       
       details += '</div>';
@@ -361,13 +369,27 @@
     window.open(url, '_blank');
   }
   
-  // Status check
-  fetch("{{ url_for('goonj.status') }}")
+  // Status check - Use detailed system status endpoint
+  fetch("{{ url_for('goonj.system_status') }}")
     .then(r => r.json())
     .then(data => {
       const el = document.getElementById('status');
       const tpl = data.template_exists ? '✓ Template Ready' : '✗ Template Missing';
-      const smtp = data.smtp_configured ? '✓ Email Configured' : '⚠ Email Not Configured';
+      
+      // Show detailed SMTP status with reasons
+      let smtp = '';
+      if (data.smtp_configured) {
+        smtp = '✓ Email Configured';
+      } else {
+        // Show why SMTP is disabled
+        if (data.smtp_status_details && data.smtp_status_details.issues && data.smtp_status_details.issues.length > 0) {
+          const firstIssue = data.smtp_status_details.issues[0];
+          smtp = `⚠ Email Disabled: ${firstIssue}`;
+        } else {
+          smtp = '⚠ Email Not Configured';
+        }
+      }
+      
       el.textContent = `${tpl} • ${smtp}`;
       el.classList.remove('muted');
       
@@ -379,6 +401,11 @@
         el.classList.add('status-error');
       } else {
         el.classList.add('status-warning');
+      }
+      
+      // Set tooltip with full details if SMTP is not configured
+      if (!data.smtp_configured && data.smtp_status_details) {
+        el.title = data.smtp_status_details.message || 'SMTP not configured';
       }
     })
     .catch(() => {
