@@ -1,34 +1,35 @@
 {
-  "version": "5.0",
+  "version": "6.0",
   "template": "template_extracted_from_sample.png",
   "template_alias": "goonj_certificate.png",
   "reference": "Sample_certificate.png",
-  "description": "Positions and font sizes extracted from Sample_certificate.png using contour detection and font matching. Reference uses very large fonts (346pt, 170pt, 102pt).",
+  "description": "Field positions calibrated sequentially (name\u2192event\u2192organiser) with 200 iterations per field and 100 cross-checks each. Based on original Canva-designed reference certificate.",
   "fields": {
     "name": {
-      "x": 0.537,
-      "y": 0.1679510465703728,
+      "x": 0.4973606979824345,
+      "y": 0.30688915870642913,
       "baseline_offset": 0,
-      "font_size": 346,
+      "font_size": 489,
       "description": "Participant name field - centered at y=357.5px, font size 346pt (text height: 433px)"
     },
     "event": {
-      "x": 0.4755,
-      "y": 0.4829698074360423,
+      "x": 0.49053570912709504,
+      "y": 0.5824911148411837,
       "baseline_offset": 0,
-      "font_size": 170,
+      "font_size": 285,
       "description": "Event name field - centered at y=733.5px, font size 170pt (text height: 213px)"
     },
     "organiser": {
-      "x": 0.493,
-      "y": 0.723058218581044,
+      "x": 0.5034954937681494,
+      "y": 0.7825544231058456,
       "baseline_offset": 0,
-      "font_size": 102,
+      "font_size": 331,
       "description": "Organiser field - centered at y=1020px, font size 102pt (text height: 128px)"
     }
   },
   "tolerance_px": 0.01,
   "calibration_date": "2025-10-31",
   "analysis_method": "contour_detection_and_font_matching",
-  "notes": "Font sizes and positions extracted from reference certificate using computer vision. Reference uses Arial Bold at very large sizes (24-37% of image height for name field text). Template extracted from reference using CV inpainting."
+  "notes": "Font sizes and positions extracted from reference certificate using computer vision. Reference uses Arial Bold at very large sizes (24-37% of image height for name field text). Template extracted from reference using CV inpainting.",
+  "calibration_method": "sequential_field_by_field_with_extensive_cross_checking"
 }
