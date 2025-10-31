@@ -265,14 +265,19 @@ def api_azure_logs():
         
         is_configured = bool(instrumentation_key or connection_string)
         
+        # Constants for key masking
+        MIN_KEY_LENGTH_FOR_PREVIEW = 12
+        KEY_PREVIEW_START = 8
+        KEY_PREVIEW_END = 4
+        
         # Get configuration details (mask sensitive data)
         azure_config = {
             'configured': is_configured,
             'has_instrumentation_key': bool(instrumentation_key),
             'has_connection_string': bool(connection_string),
             'instrumentation_key_preview': (
-                instrumentation_key[:8] + '...' + instrumentation_key[-4:] 
-                if instrumentation_key and len(instrumentation_key) > 12 
+                instrumentation_key[:KEY_PREVIEW_START] + '...' + instrumentation_key[-KEY_PREVIEW_END:] 
+                if instrumentation_key and len(instrumentation_key) > MIN_KEY_LENGTH_FOR_PREVIEW 
                 else None
             ),
             'status': 'enabled' if is_configured else 'not_configured'

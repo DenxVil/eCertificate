@@ -47,9 +47,6 @@ except ImportError:
 except Exception as e:
     logger.warning(f"Failed to initialize Azure Application Insights: {e}")
 
-# Initialize Flask-Compress for response compression
-compress = Compress()
-
 
 def create_app(config_name='default'):
     """Create and configure the Flask application.

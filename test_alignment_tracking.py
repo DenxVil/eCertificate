@@ -24,7 +24,7 @@ def create_test_certificate(path, y_offset=0):
     # Try to use a default font, fallback to PIL's default
     try:
         font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 40)
-    except:
+    except (IOError, OSError):
         font = ImageFont.load_default()
     
     # Draw text at specific positions (with optional offset)

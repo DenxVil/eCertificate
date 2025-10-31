@@ -164,7 +164,6 @@ def verify_alignment_with_retries(
     # Track all attempts to find the best one
     all_attempts = []
     best_attempt = None
-    best_cert_path = None
     
     for attempt in range(1, max_attempts + 1):
         try:
@@ -211,9 +210,6 @@ def verify_alignment_with_retries(
             # Track the best attempt so far
             if best_attempt is None or max_diff < best_attempt['max_difference_px']:
                 best_attempt = attempt_result
-                # Store a copy of the certificate path for the best attempt
-                if os.path.exists(generated_cert_path):
-                    best_cert_path = generated_cert_path
             
             # Check if within tolerance
             if max_diff <= tolerance_px:
