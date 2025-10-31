@@ -502,3 +502,181 @@ input[type="file"] {
   color: var(--status-warning) !important;
 }
 
+
+/* Status Modal Styles */
+.status-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s;
+}
+
+.status-modal-content {
+  background-color: var(--bg, #fff);
+  color: var(--fg, #333);
+  border-radius: 12px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s;
+}
+
+.status-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border, #ddd);
+}
+
+.status-modal-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: var(--fg, #333);
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.close-btn:hover {
+  opacity: 1;
+}
+
+.status-modal-body {
+  padding: 20px;
+}
+
+.status-message {
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.status-message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.status-message.progress {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+.status-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: var(--card-bg, #f8f9fa);
+  border-radius: 8px;
+}
+
+.status-section h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.status-section p {
+  margin: 8px 0;
+}
+
+.status-section.error-section {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+}
+
+.error-details {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+}
+
+.error-details ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.help-text {
+  font-size: 0.9rem;
+  color: #666;
+  font-style: italic;
+}
+
+.status-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.status-actions .btn {
+  flex: 1;
+  min-width: 120px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Dark theme support */
+[data-theme="dark"] .status-modal-content {
+  --bg: #2d2d2d;
+  --fg: #e0e0e0;
+  --card-bg: #3a3a3a;
+  --border: #444;
+}
+
+[data-theme="dark"] .status-message.success {
+  background-color: #1e4620;
+  color: #4ade80;
+  border-color: #2d5a2e;
+}
+
+[data-theme="dark"] .status-message.error {
+  background-color: #5a1a1a;
+  color: #f87171;
+  border-color: #7a2424;
+}
+
+[data-theme="dark"] .status-message.progress {
+  background-color: #1a4a5a;
+  color: #38bdf8;
+  border-color: #245a6f;
+}

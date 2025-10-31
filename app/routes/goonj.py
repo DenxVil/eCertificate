@@ -1,5 +1,5 @@
 """GOONJ certificate generation routes."""
-from flask import Blueprint, request, jsonify, send_file, current_app, render_template
+from flask import Blueprint, request, jsonify, send_file, current_app, render_template, url_for
 from app.utils.goonj_renderer import GOONJRenderer
 from app.utils.mail import send_goonj_certificate
 from app.utils.alignment_checker import (
@@ -8,11 +8,13 @@ from app.utils.alignment_checker import (
     AlignmentVerificationError
 )
 from app.utils.auto_alignment_fixer import ensure_ditto_alignment
+from app.utils.universal_alignment_checker import verify_all_certificates
 import os
 import io
 import csv
 import json
 import logging
+import base64
 
 goonj_bp = Blueprint('goonj', __name__)
 logger = logging.getLogger(__name__)
@@ -54,6 +56,57 @@ def parse_csv_text(csv_text):
         if any(v for v in cleaned.values() if v not in (None, "")):
             participants.append(cleaned)
     return participants
+
+
+def check_smtp_configuration():
+    """Check SMTP configuration and return detailed status.
+    
+    Returns:
+        Dictionary with:
+        - configured: bool
+        - issues: list of configuration issues
+        - message: human-readable status message
+    """
+    issues = []
+    
+    mail_server = current_app.config.get('MAIL_SERVER')
+    mail_port = current_app.config.get('MAIL_PORT')
+    mail_username = current_app.config.get('MAIL_USERNAME')
+    mail_password = current_app.config.get('MAIL_PASSWORD')
+    mail_sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+    
+    if not mail_server:
+        issues.append("MAIL_SERVER not configured in .env file")
+    
+    if not mail_port:
+        issues.append("MAIL_PORT not configured in .env file")
+    
+    if not mail_username:
+        issues.append("MAIL_USERNAME (email address) not configured in .env file")
+    
+    if not mail_password:
+        issues.append("MAIL_PASSWORD (app password) not configured in .env file")
+    
+    if not mail_sender:
+        issues.append("MAIL_DEFAULT_SENDER not configured in .env file")
+    
+    configured = len(issues) == 0
+    
+    if configured:
+        message = f"SMTP configured: {mail_username} via {mail_server}:{mail_port}"
+    else:
+        message = f"SMTP not configured. Missing: {', '.join(issues)}"
+    
+    return {
+        'configured': configured,
+        'issues': issues,
+        'message': message,
+        'server': mail_server,
+        'port': mail_port,
+        'username': mail_username,
+        'has_password': bool(mail_password),
+        'sender': mail_sender
+    }
 
 
 @goonj_bp.route('/generate', methods=['POST'])
@@ -199,47 +252,31 @@ def generate_certificate():
                 'error': 'Certificate generation failed: invalid output path.'
             }), 500
         
-        # ALIGNMENT VERIFICATION: Ensure generated certificate matches sample with <0.01px difference
-        # This is critical for standardization and must pass before sending
-        # Only verify alignment for sample data to ensure rendering consistency
+        # ALIGNMENT VERIFICATION: Verify ALL generated certificates
+        # This ensures consistent dimensions, format, and template configuration
         alignment_enabled = current_app.config.get('ENABLE_ALIGNMENT_CHECK', True)
+        alignment_status = {
+            'enabled': alignment_enabled,
+            'passed': True,
+            'message': 'Alignment verification skipped (disabled)',
+            'details': {}
+        }
         
-        # Check if this is a sample certificate (used for alignment verification)
-        is_sample_cert = (
-            participant_data.get('name', '').upper() == 'SAMPLE NAME' and
-            participant_data.get('event', '').upper() == 'SAMPLE EVENT' and
-            participant_data.get('organiser', '').upper() == 'SAMPLE ORG'
-        )
-        
-        if alignment_enabled and is_sample_cert:
+        if alignment_enabled:
             try:
-                logger.info("Sample certificate detected - running alignment verification")
+                logger.info("Running universal alignment verification for certificate")
                 
-                # Use auto-fix system to ensure ditto alignment
-                alignment_result = ensure_ditto_alignment(
-                    cert_path_abs,
-                    template_path,
-                    output_folder=output_folder
-                )
+                # Universal verification works for ALL certificates
+                verification_result = verify_all_certificates(cert_path_abs, template_path)
                 
-                if alignment_result['aligned']:
-                    logger.info(
-                        f"✅ Alignment verification PASSED: {alignment_result['message']}"
-                    )
-                    if alignment_result['fixed']:
-                        logger.info(
-                            "Reference certificate was automatically regenerated to fix alignment"
-                        )
-                    logger.info(
-                        f"Certificate alignment: {alignment_result['difference_pct']:.6f}% difference"
-                    )
+                alignment_status['passed'] = verification_result['passed']
+                alignment_status['details'] = verification_result['checks']
+                alignment_status['message'] = verification_result['message']
+                
+                if verification_result['passed']:
+                    logger.info(f"✅ Alignment verification PASSED: {verification_result['message']}")
                 else:
-                    # Alignment failed even after auto-fix attempts
-                    error_msg = (
-                        f"Certificate alignment verification failed: {alignment_result['message']}. "
-                        f"Certificate will NOT be sent. "
-                    )
-                    logger.error(error_msg)
+                    logger.error(f"❌ Alignment verification FAILED: {verification_result['message']}")
                     
                     # Clean up the failed certificate
                     try:
@@ -249,34 +286,17 @@ def generate_certificate():
                         logger.warning(f"Could not remove failed certificate: {cleanup_error}")
                     
                     return jsonify({
+                        'success': False,
                         'error': 'Certificate alignment verification failed',
-                        'message': error_msg,
-                        'difference_pct': alignment_result.get('difference_pct', 0)
+                        'message': verification_result['message'],
+                        'alignment_status': alignment_status
                     }), 500
-                
-            except FileNotFoundError as e:
-                logger.error(f"Alignment verification error: Reference certificate not found: {e}")
-                # Allow certificate to proceed if reference is missing (degraded mode)
-                logger.warning("Proceeding without alignment verification (reference not found)")
-                
-            except AlignmentVerificationError as e:
-                logger.error(f"Alignment verification error: {e}")
-                
-                # Clean up the certificate
-                try:
-                    os.remove(cert_path_abs)
-                except Exception:
-                    pass
-                
-                return jsonify({
-                    'error': 'Certificate alignment verification failed',
-                    'message': 'The generated certificate does not match the reference sample within the required tolerance. Please contact support if this issue persists.'
-                }), 500
-                
+                    
             except Exception as e:
                 logger.exception(f"Unexpected error during alignment verification: {e}")
-                # Allow certificate to proceed (degraded mode)
-                logger.warning("Proceeding without alignment verification due to unexpected error")
+                alignment_status['passed'] = False
+                alignment_status['message'] = f'Verification error: {e}'
+                alignment_status['error'] = str(e)
         
         # Optional validation in dev mode (gated by DEBUG_VALIDATE)
         if current_app.config.get('DEBUG_VALIDATE', False):
@@ -306,19 +326,79 @@ def generate_certificate():
                 # Don't fail certificate generation if validation has issues
                 logger.warning(f"Certificate validation encountered error (ignored): {e}")
         
-        # Send email if email is present and SMTP is configured
-        email_sent = False
+        # Send email if email is present
+        email_status = {
+            'attempted': False,
+            'sent': False,
+            'error': None,
+            'smtp_config': None
+        }
+        
         participant_email = participant_data.get('email')
         if participant_email:
-            event_name = participant_data.get('event', 'GOONJ')
-            email_sent = send_goonj_certificate(
-                recipient_email=participant_email,
-                recipient_name=participant_data['name'],
-                certificate_path=cert_path_abs,
-                event_name=event_name
-            )
+            email_status['attempted'] = True
+            
+            # Check SMTP configuration first
+            smtp_config = check_smtp_configuration()
+            email_status['smtp_config'] = smtp_config
+            
+            if smtp_config['configured']:
+                try:
+                    event_name = participant_data.get('event', 'GOONJ')
+                    email_sent = send_goonj_certificate(
+                        recipient_email=participant_email,
+                        recipient_name=participant_data['name'],
+                        certificate_path=cert_path_abs,
+                        event_name=event_name
+                    )
+                    email_status['sent'] = email_sent
+                    
+                    if email_sent:
+                        logger.info(f"Certificate emailed successfully to {participant_email}")
+                    else:
+                        email_status['error'] = 'Email sending failed. Check server logs for details.'
+                        logger.error(f"Failed to send email to {participant_email}")
+                        
+                except Exception as e:
+                    email_status['error'] = f'Email error: {str(e)}'
+                    logger.exception(f"Exception while sending email to {participant_email}: {e}")
+            else:
+                email_status['error'] = smtp_config['message']
+                logger.warning(f"Cannot send email - SMTP not configured: {smtp_config['message']}")
         
-        # Return the certificate file
+        # Check if client wants JSON response (via Accept header or return_json parameter)
+        wants_json = (
+            request.accept_mimetypes.best == 'application/json' or
+            request.args.get('return_json') == 'true' or
+            request.form.get('return_json') == 'true'
+        )
+        
+        if wants_json:
+            # Return JSON with detailed status
+            # Create a download URL for the certificate
+            cert_filename = os.path.basename(cert_path_abs)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Certificate generated successfully',
+                'certificate': {
+                    'filename': cert_filename,
+                    'path': cert_path_abs,
+                    'download_url': url_for('goonj.download_certificate', filename=cert_filename, _external=False),
+                    'format': output_format,
+                    'size_bytes': os.path.getsize(cert_path_abs)
+                },
+                'participant': {
+                    'name': participant_data['name'],
+                    'event': participant_data.get('event', 'GOONJ'),
+                    'organiser': participant_data.get('organiser', 'AMA'),
+                    'email': participant_email
+                },
+                'alignment_status': alignment_status,
+                'email_status': email_status
+            }), 200
+        
+        # Default: Return the certificate file for download
         mimetype = 'application/pdf' if output_format == 'pdf' else 'image/png'
         return send_file(
             cert_path_abs,
@@ -337,6 +417,58 @@ def generate_certificate():
         return jsonify({
             'error': 'Error generating certificate. Please check your input data and try again.'
         }), 500
+
+
+@goonj_bp.route('/download/<filename>', methods=['GET'])
+def download_certificate(filename):
+    """Download a previously generated certificate.
+    
+    Args:
+        filename: Name of the certificate file to download
+        
+    Returns:
+        Certificate file or 404 error
+    """
+    try:
+        # Security: validate filename (no path traversal)
+        if '..' in filename or '/' in filename or '\\' in filename:
+            logger.warning(f"Invalid filename attempted: {filename}")
+            return jsonify({'error': 'Invalid filename'}), 400
+        
+        output_folder = current_app.config.get('OUTPUT_FOLDER', 'generated_certificates')
+        if not os.path.isabs(output_folder):
+            output_folder = os.path.abspath(output_folder)
+        
+        cert_path = os.path.join(output_folder, filename)
+        cert_path_abs = os.path.abspath(cert_path)
+        
+        # Security: ensure file is within output folder
+        if not cert_path_abs.startswith(os.path.abspath(output_folder)):
+            logger.warning(f"Path traversal attempted: {filename}")
+            return jsonify({'error': 'Invalid file path'}), 400
+        
+        if not os.path.exists(cert_path_abs):
+            logger.warning(f"Certificate file not found: {cert_path_abs}")
+            return jsonify({'error': 'Certificate not found'}), 404
+        
+        # Determine mimetype based on extension
+        if filename.endswith('.pdf'):
+            mimetype = 'application/pdf'
+        elif filename.endswith('.png'):
+            mimetype = 'image/png'
+        else:
+            mimetype = 'application/octet-stream'
+        
+        return send_file(
+            cert_path_abs,
+            mimetype=mimetype,
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        logger.exception(f"Error downloading certificate {filename}: {e}")
+        return jsonify({'error': 'Error downloading certificate'}), 500
 
 
 @goonj_bp.route('/status', methods=['GET'])
