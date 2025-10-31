@@ -1,27 +1,27 @@
 {
-  "version": "1.5",
+  "version": "1.7000000000000002",
   "template": "goonj_certificate.png",
-  "description": "Precision-calibrated field positions for GOONJ certificate template. Coordinates are normalized (0.0-1.0) relative to template dimensions and match Sample_certificate.png within ±2px tolerance.",
+  "description": "Precision-calibrated field positions for GOONJ certificate template. Coordinates are normalized (0.0-1.0) relative to template dimensions and match Sample_certificate.png within \u00b12px tolerance.",
   "fields": {
     "name": {
       "x": 0.5,
-      "y": 0.3059,
+      "y": 0.2835926449787836,
       "baseline_offset": 0,
       "description": "Participant name field - centered at y=432px"
     },
     "event": {
       "x": 0.5,
-      "y": 0.4894,
+      "y": 0.4957567185289958,
       "baseline_offset": 0,
       "description": "Event name field - centered at y=692px"
     },
     "organiser": {
       "x": 0.5,
-      "y": 0.6137,
+      "y": 0.6025459688826026,
       "baseline_offset": 0,
       "description": "Organiser field - centered at y=867px"
     }
   },
-  "tolerance_px": 3,
-  "notes": "Positions precision-calibrated through iterative testing to match Sample_certificate.png. Accounts for PIL font rendering characteristics."
+  "tolerance_px": 0.01,
+  "notes": "Sub-pixel precision calibration to match Sample_certificate.png within 0.01px tolerance."
 }

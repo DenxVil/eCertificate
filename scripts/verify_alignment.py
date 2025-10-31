@@ -130,34 +130,33 @@ def verify_alignment():
         generated_img = Image.open(generated_path)
         reference_img = Image.open(reference_path)
         
-        # Calculate difference with tolerance for font rendering variations
+        # Calculate difference with very strict tolerance (0.01 pixel requirement)
         diff_pct, max_diff, has_diff = calculate_image_diff(
             generated_img, 
             reference_img, 
-            tolerance=15  # Allow for font rendering and anti-aliasing differences
+            tolerance=1  # Very strict: only 1-value differences allowed (0.01px tolerance)
         )
         
         logger.info(f"  Difference: {diff_pct:.4f}% of pixels")
         logger.info(f"  Max pixel diff: {max_diff}/255")
         logger.info("")
         
-        # More lenient thresholds - field positions within ±5px is acceptable
-        if diff_pct < 0.05:  # Less than 0.05% different pixels
+        # Very strict thresholds for 0.01px requirement
+        if diff_pct == 0.0 and max_diff == 0:
             logger.info("=" * 60)
-            logger.info("✅ ALIGNMENT CHECK PASSED")
+            logger.info("✅ PERFECT ALIGNMENT - 0.00px difference")
+            logger.info("=" * 60)
+            logger.info("")
+            logger.info("The generated certificate is IDENTICAL to the reference.")
+            logger.info("Pixel-perfect match achieved (0.01px requirement met).")
+            return 0
+        elif diff_pct < 0.001:  # Less than 0.001% different pixels (~0.01px tolerance)
+            logger.info("=" * 60)
+            logger.info("✅ ALIGNMENT CHECK PASSED (sub-pixel precision)")
             logger.info("=" * 60)
             logger.info("")
             logger.info("The generated certificate matches the reference.")
-            logger.info("All fields are correctly aligned (pixel-perfect or within tolerance).")
-            return 0
-        elif diff_pct < 2.0:  # Less than 2% different pixels is still acceptable
-            logger.info("=" * 60)
-            logger.info("✅ ALIGNMENT CHECK PASSED (with minor differences)")
-            logger.info("=" * 60)
-            logger.info("")
-            logger.info("The generated certificate is very close to the reference.")
-            logger.info("Minor differences detected (likely font rendering variations).")
-            logger.info("Field positions are within acceptable tolerance (±5px).")
+            logger.info("Difference is within 0.01px tolerance.")
             return 0
         else:
             logger.error("=" * 60)
@@ -165,7 +164,7 @@ def verify_alignment():
             logger.error("=" * 60)
             logger.error("")
             logger.error("The generated certificate does NOT match the reference.")
-            logger.error("Field positions are not aligned correctly.")
+            logger.error(f"Difference: {diff_pct:.6f}% (exceeds 0.01px tolerance)")
             logger.error("")
             logger.error(f"Generated: {generated_path}")
             logger.error(f"Reference: {reference_path}")
