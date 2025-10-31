@@ -1,8 +1,10 @@
 """GOONJ Certificate Renderer - Renders participant data on GOONJ template."""
 import os
+import json
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 import logging
+from .text_align import draw_text_centered, get_font
 
 logger = logging.getLogger(__name__)
 
@@ -34,34 +36,72 @@ class GOONJRenderer:
         self.width = width
         self.height = height
         
+        # Load field offsets from JSON if available
+        self._load_field_offsets()
+        
         # Define bounding boxes for GOONJ certificate (supports three fields only)
         # Positions as percentage of template height for vertical placement
         # NAME at ~33% (32-35%), EVENT at ~42% (41-43%), ORGANISED BY at ~51% (49-52%)
         self.name_bbox = {
             'x': width // 2,
-            'y': int(height * 0.33),  # 33% down
+            'y': int(height * self.field_offsets['name']['y']),
             'base_font_size': int(height * 0.05),  # ~5% of height
-            'color': '#000000'  # Pure black
+            'color': '#000000',  # Pure black
+            'baseline_offset': self.field_offsets['name'].get('baseline_offset', 0)
         }
         
         self.event_bbox = {
             'x': width // 2,
-            'y': int(height * 0.42),  # 42% down
+            'y': int(height * self.field_offsets['event']['y']),
             'base_font_size': int(height * 0.042),  # ~4.2% of height
-            'color': '#000000'  # Pure black
+            'color': '#000000',  # Pure black
+            'baseline_offset': self.field_offsets['event'].get('baseline_offset', 0)
         }
         
         self.organiser_bbox = {
             'x': width // 2,
-            'y': int(height * 0.51),  # 51% down
+            'y': int(height * self.field_offsets['organiser']['y']),
             'base_font_size': int(height * 0.042),  # ~4.2% of height
-            'color': '#000000'  # Pure black
+            'color': '#000000',  # Pure black
+            'baseline_offset': self.field_offsets['organiser'].get('baseline_offset', 0)
         }
         
         # Max width for text (80-85% of image width)
         self.max_text_width = int(width * 0.825)  # 82.5% of width
         
         self._load_fonts()
+    
+    def _load_field_offsets(self):
+        """Load field position offsets from JSON configuration.
+        
+        Reads templates/goonj_template_offsets.json for normalized field positions
+        and baseline offsets. Falls back to default positions if file not found.
+        """
+        # Default offsets
+        self.field_offsets = {
+            'name': {'x': 0.5, 'y': 0.33, 'baseline_offset': 0},
+            'event': {'x': 0.5, 'y': 0.42, 'baseline_offset': 0},
+            'organiser': {'x': 0.5, 'y': 0.51, 'baseline_offset': 0}
+        }
+        
+        # Try to load from JSON file
+        template_dir = os.path.dirname(self.template_path)
+        offsets_path = os.path.join(template_dir, 'goonj_template_offsets.json')
+        
+        if os.path.exists(offsets_path):
+            try:
+                with open(offsets_path, 'r') as f:
+                    data = json.load(f)
+                    if 'fields' in data:
+                        # Update offsets with values from JSON
+                        for field in ['name', 'event', 'organiser']:
+                            if field in data['fields']:
+                                self.field_offsets[field].update(data['fields'][field])
+                        logger.info(f"Loaded field offsets from {offsets_path}")
+            except Exception as e:
+                logger.warning(f"Could not load field offsets from {offsets_path}: {e}, using defaults")
+        else:
+            logger.debug(f"Offsets file not found at {offsets_path}, using default positions")
     
     def _load_fonts(self):
         """Load bold sans-serif fonts for text rendering.
@@ -98,13 +138,8 @@ class GOONJRenderer:
         return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     
     def _get_font(self, size):
-        """Get a font at the specified size."""
-        if self.font_path:
-            try:
-                return ImageFont.truetype(self.font_path, size)
-            except (OSError, IOError):
-                pass
-        return ImageFont.load_default()
+        """Get a font at the specified size using the shared helper."""
+        return get_font(self.font_path, size)
     
     def _fit_text_to_width(self, draw, text, base_font_size, max_width):
         """Scale down text to fit within max_width.
@@ -177,7 +212,8 @@ class GOONJRenderer:
             self.name_bbox['x'], 
             self.name_bbox['y'],
             name_font,
-            text_color
+            text_color,
+            baseline_offset=self.name_bbox['baseline_offset']
         )
         
         # Draw event name (centered, ~42% down)
@@ -193,7 +229,8 @@ class GOONJRenderer:
             self.event_bbox['x'],
             self.event_bbox['y'],
             event_font,
-            text_color
+            text_color,
+            baseline_offset=self.event_bbox['baseline_offset']
         )
         
         # Draw organiser (centered, ~51% down)
@@ -209,7 +246,8 @@ class GOONJRenderer:
             self.organiser_bbox['x'],
             self.organiser_bbox['y'],
             organiser_font,
-            text_color
+            text_color,
+            baseline_offset=self.organiser_bbox['baseline_offset']
         )
         
         # Generate filename
@@ -231,12 +269,17 @@ class GOONJRenderer:
         logger.info(f"Generated GOONJ certificate: {output_path}")
         return output_path
     
-    def _draw_centered_text(self, draw, text, x, y, font, color):
-        """Draw text centered at the given position using PIL anchor point.
+    def _draw_centered_text(self, draw, text, x, y, font, color, baseline_offset=0):
+        """Draw text centered at the given position using shared alignment helper.
         
-        Uses 'mm' anchor which centers text both horizontally and vertically
-        at the baseline for better alignment accuracy.
+        Uses draw_text_centered from text_align module for consistent alignment.
         """
-        # Use 'mm' anchor for middle-middle alignment
-        # This centers the text at both x and y coordinates
-        draw.text((x, y), text, font=font, fill=color, anchor='mm')
+        draw_text_centered(
+            draw, 
+            (x, y), 
+            text, 
+            font, 
+            color, 
+            align="center",
+            baseline_offset=baseline_offset
+        )

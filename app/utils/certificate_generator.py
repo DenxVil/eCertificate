@@ -2,6 +2,7 @@
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from datetime import datetime
+from .text_align import draw_text_centered, get_font
 # & .\.venv\Scripts\Activate.ps1; python app.py
 
 class CertificateGenerator:
@@ -49,11 +50,8 @@ class CertificateGenerator:
             self.date_font = ImageFont.load_default()
 
     def _get_font(self, font_name, size):
-        """Load a font, falling back to default if not found."""
-        try:
-            return ImageFont.truetype(font_name, size)
-        except OSError:
-            return ImageFont.load_default()
+        """Load a font, falling back to default if not found using shared helper."""
+        return get_font(font_name, size)
 
     def _get_text_color(self, image, region):
         """Analyze a region of the image to determine a contrasting text color."""
@@ -109,25 +107,11 @@ class CertificateGenerator:
         return output_path
 
     def _draw_text(self, draw, text, position, font, fill, align="center"):
-        """Draw text with specified alignment using PIL anchor points.
+        """Draw text with specified alignment using shared alignment helper.
         
-        Uses anchor points for precise text alignment:
-        - 'mm' for center alignment (middle-middle)
-        - 'rm' for right alignment (right-middle)
-        - 'lm' for left alignment (left-middle)
+        Delegates to draw_text_centered for consistent alignment across all generators.
         """
-        x, y = position
-        
-        # Map alignment to PIL anchor points
-        anchor_map = {
-            "center": "mm",  # middle-middle
-            "right": "rm",   # right-middle
-            "left": "lm"     # left-middle
-        }
-        anchor = anchor_map.get(align, "mm")
-        
-        # Draw text with anchor point for precise alignment
-        draw.text((x, y), text, font=font, fill=fill, anchor=anchor)
+        draw_text_centered(draw, position, text, font, fill, align=align)
     
     def generate_certificate(self, participant_name, event_name=None, output_filename=None):
         """Generate a certificate using a default layout with the advanced generator.

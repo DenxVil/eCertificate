@@ -193,6 +193,34 @@ def generate_certificate():
                 'error': 'Certificate generation failed: invalid output path.'
             }), 500
         
+        # Optional validation in dev mode (gated by DEBUG_VALIDATE)
+        if current_app.config.get('DEBUG_VALIDATE', False):
+            try:
+                from app.utils.certificate_validator import validate as validate_cert
+                
+                tolerance = current_app.config.get('VALIDATE_TOLERANCE_PX', 3)
+                validation_result = validate_cert(
+                    cert_path_abs, 
+                    template_ref_path=template_path,
+                    tolerance_px=tolerance
+                )
+                
+                # Log validation results in dev mode
+                logger.info(f"Certificate validation: {'PASS' if validation_result['pass'] else 'FAIL'}")
+                for field_name, field_data in validation_result['details'].items():
+                    logger.debug(
+                        f"  {field_name}: dx={field_data['dx']}px, dy={field_data['dy']}px, "
+                        f"ok={field_data['ok']}"
+                    )
+                
+                if not validation_result['pass']:
+                    logger.warning(
+                        f"Certificate validation failed. Overlay saved to: {validation_result['overlay_path']}"
+                    )
+            except Exception as e:
+                # Don't fail certificate generation if validation has issues
+                logger.warning(f"Certificate validation encountered error (ignored): {e}")
+        
         # Send email if email is present and SMTP is configured
         email_sent = False
         participant_email = participant_data.get('email')
