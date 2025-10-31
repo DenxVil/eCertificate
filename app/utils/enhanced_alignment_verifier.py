@@ -21,6 +21,7 @@ from .iterative_alignment_verifier import (
 from .position_cache import get_position_cache
 from .progressive_refiner import ProgressiveRefiner, apply_progressive_refinement
 from .alignment_stats import get_alignment_stats
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,7 @@ def verify_alignment_enhanced(
             diff_result = calculate_position_difference(generated_positions, reference_positions)
             
             if diff_result['max_difference_px'] <= tolerance_px:
-                logger.info("✅ Cache hit resulted in perfect alignment!")
+                logger.info(f"✅ Cache hit resulted in perfect alignment!")
                 
                 result = {
                     'passed': True,
@@ -79,7 +80,8 @@ def verify_alignment_enhanced(
                     'max_difference_px': diff_result['max_difference_px'],
                     'fields': diff_result['fields'],
                     'message': f"CACHED: Perfect alignment from cache (diff={diff_result['max_difference_px']:.4f}px)",
-                    'used_cache': True
+                    'used_cache': True,
+                    'cache_age_seconds': int((datetime.now() - cached_time).total_seconds())
                 }
                 
                 if stats_tracker:
@@ -269,8 +271,12 @@ def _verify_with_progressive_refinement(
             # Apply progressive refinement for next attempt
             if attempt < max_attempts:
                 logger.info("Applying progressive refinement for next attempt...")
-                # TODO: Integrate with renderer to apply adjustments
-                # For now, just regenerate
+                # Note: Full progressive refinement integration requires renderer support
+                # for applying baseline_offset adjustments. For now, we still benefit from:
+                # 1. Convergence detection (abort early if not improving)
+                # 2. Best attempt tracking (return best if max attempts reached)
+                # 3. Detailed logging of field differences
+                # TODO: Integrate apply_progressive_refinement with renderer to apply adjustments
                 regenerate_func()
         
         except Exception as e:

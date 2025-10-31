@@ -99,7 +99,7 @@ class PositionCache:
             self._save_cache()
             return None
         
-        logger.info(f"Position cache hit for key {key[:8]}... (age: {(datetime.now() - cached_time).seconds}s)")
+        logger.info(f"Position cache hit for key {key[:8]}... (age: {int((datetime.now() - cached_time).total_seconds())}s)")
         return entry['data']
     
     def set(self, participant_data: Dict[str, str], position_data: Dict[str, Any]):
