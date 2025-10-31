@@ -1,8 +1,9 @@
 {
   "version": "3.0",
   "template": "template_goonj.png",
+  "template_alias": "goonj_certificate.png",
   "reference": "Sample_certificate.png",
-  "description": "Precise field positions extracted from Sample_certificate.png with 10% visible box alignment.",
+  "description": "Precise field positions extracted from Sample_certificate.png with 10% visible box alignment. Note: goonj_certificate.png is a symlink to template_goonj.png for compatibility.",
   "fields": {
     "name": {
       "x": 0.49975,

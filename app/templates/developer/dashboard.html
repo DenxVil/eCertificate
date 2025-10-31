@@ -246,11 +246,11 @@
       <h2>Environment Configuration</h2>
       
       <div class="tabs">
-        <button class="tab active" onclick="switchTab('all')">All Variables</button>
-        <button class="tab" onclick="switchTab('flask')">Flask</button>
-        <button class="tab" onclick="switchTab('database')">Database</button>
-        <button class="tab" onclick="switchTab('mail')">Mail</button>
-        <button class="tab" onclick="switchTab('alignment')">Alignment</button>
+        <button class="tab active" onclick="switchTab('all', event)">All Variables</button>
+        <button class="tab" onclick="switchTab('flask', event)">Flask</button>
+        <button class="tab" onclick="switchTab('database', event)">Database</button>
+        <button class="tab" onclick="switchTab('mail', event)">Mail</button>
+        <button class="tab" onclick="switchTab('alignment', event)">Alignment</button>
       </div>
       
       <div id="env-config" class="loading">Loading environment configuration...</div>
@@ -438,7 +438,7 @@
       document.getElementById('env-config').innerHTML = html;
     }
     
-    function switchTab(category) {
+    function switchTab(category, event) {
       // Update active tab
       document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.remove('active');

@@ -21,7 +21,6 @@ import csv
 import json
 import logging
 import base64
-import threading
 import time
 
 goonj_bp = Blueprint('goonj', __name__)
