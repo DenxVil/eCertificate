@@ -43,6 +43,12 @@ def show_summary():
     print("ALIGNMENT VERIFICATION STATISTICS")
     print("=" * 70)
     
+    if summary['total_verifications'] == 0:
+        print("\n📊 No statistics collected yet.")
+        print("   Generate some certificates to collect alignment data.")
+        print()
+        return
+    
     print(f"\n📊 Overall Statistics:")
     print(f"   Total verifications: {summary['total_verifications']}")
     print(f"   Successful: {summary['successful_verifications']}")
