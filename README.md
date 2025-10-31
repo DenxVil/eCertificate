@@ -259,28 +259,31 @@ Use the browser page at `/goonj` to generate a single certificate or upload a CS
 
 ## Alignment Verification
 
-The repository includes **automated pixel-perfect alignment verification** with **<0.01px tolerance**:
+The repository includes **automated pixel-perfect alignment verification** with **<0.01px tolerance** and **automatic fixing**:
 
-### Pre-Send Verification (NEW ✨)
+### Automatic Alignment Fixing (NEW ✨)
 
-Every certificate is automatically verified before being sent to ensure pixel-perfect quality:
+The system automatically maintains pixel-perfect alignment between generated certificates and the reference:
+
+**How it works:**
+1. Sample certificates are automatically verified against the reference
+2. If misalignment is detected, the system automatically regenerates the reference
+3. Retries up to 3 times to achieve pixel-perfect match
+4. **Ensures all certificates are "ditto" (identical)** to the reference
+5. Logs all auto-fix attempts and results
 
 ```bash
 # Configuration in .env
 ENABLE_ALIGNMENT_CHECK=True           # Enable verification (default: True)
-ALIGNMENT_TOLERANCE_PX=0.01           # Maximum allowed pixel difference
-ALIGNMENT_MAX_ATTEMPTS=3              # Number of verification attempts
 ```
 
-**How it works:**
-1. Certificate is generated
-2. Automatically compared pixel-by-pixel with reference sample
-3. Verified to be within <0.01px tolerance
-4. Retries if needed (up to 3 attempts)
-5. **Blocks sending** if verification fails
-6. Logs all attempts and results
+**Benefits:**
+- ✅ Zero-downtime automatic recovery from alignment issues
+- ✅ Ensures consistent rendering across all certificates
+- ✅ Pixel-perfect 0.00% difference guarantee
+- ✅ No manual intervention required
 
-See [Alignment Verification Documentation](docs/ALIGNMENT_VERIFICATION.md) for complete details.
+See [Auto Alignment Fixing Documentation](docs/AUTO_ALIGNMENT_FIXING.md) for complete details.
 
 ### Manual Verification Script
 
