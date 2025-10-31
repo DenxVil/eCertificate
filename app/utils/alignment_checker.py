@@ -10,6 +10,11 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# Tolerance constants for pixel-perfect verification
+# These map the 0.01px requirement to practical thresholds
+PIXEL_VALUE_TOLERANCE = 1  # Maximum RGB channel difference (0-255)
+PERCENTAGE_TOLERANCE = 0.001  # Maximum percentage of different pixels (0.001% ~= 0.01px)
+
 
 class AlignmentVerificationError(Exception):
     """Raised when certificate alignment verification fails."""
@@ -57,7 +62,7 @@ def calculate_image_difference(img1, img2, tolerance=1):
             significant_diffs += 1
     
     diff_percentage = (significant_diffs / total_pixels) * 100.0
-    has_significant_diff = diff_percentage > 0.001  # More than 0.001% different pixels
+    has_significant_diff = diff_percentage > PERCENTAGE_TOLERANCE  # More than 0.001% different pixels
     
     return diff_percentage, max_diff, has_significant_diff
 
@@ -101,17 +106,16 @@ def verify_certificate_alignment(generated_path, reference_path, tolerance_px=0.
         
         # Calculate difference with strict tolerance (1-value differences allowed for 0.01px tolerance)
         # This maps to the 0.01px requirement by allowing minimal anti-aliasing differences
-        pixel_tolerance = 1
         diff_pct, max_diff, has_diff = calculate_image_difference(
             generated_img, 
             reference_img, 
-            tolerance=pixel_tolerance
+            tolerance=PIXEL_VALUE_TOLERANCE
         )
         
         # Check against tolerance
         # Perfect match: 0.0% diff and max_diff=0
-        # Sub-pixel precision: <0.001% diff (maps to ~0.01px tolerance)
-        passed = diff_pct < 0.001 and max_diff <= pixel_tolerance
+        # Sub-pixel precision: <PERCENTAGE_TOLERANCE (maps to ~0.01px tolerance)
+        passed = diff_pct < PERCENTAGE_TOLERANCE and max_diff <= PIXEL_VALUE_TOLERANCE
         
         result = {
             'passed': passed,

@@ -234,10 +234,12 @@ def generate_certificate():
                             f"{verification_result['message']}"
                         )
                         
-                        # If not the last attempt, could regenerate here
-                        # For now, we just retry verification as the generation should be deterministic
+                        # Note: We retry verification only, not regeneration.
+                        # Certificate generation is deterministic, so the same input
+                        # always produces the same output. If verification fails,
+                        # it means the reference doesn't match the current generation logic.
                         if attempt < alignment_max_attempts:
-                            logger.info(f"Retrying alignment check...")
+                            logger.info(f"Retrying alignment verification...")
                 
                 # Check final result
                 if not verification_result or not verification_result['passed']:

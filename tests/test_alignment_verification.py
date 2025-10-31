@@ -20,6 +20,7 @@ from app.utils.alignment_checker import (
     verify_with_retry,
     AlignmentVerificationError
 )
+from app.utils.goonj_renderer import GOONJRenderer
 
 
 class TestImageDifferenceCalculation:
@@ -215,9 +216,6 @@ class TestIntegrationWithActualCertificates:
         if not os.path.exists(template_path) or not os.path.exists(reference_path):
             pytest.skip("GOONJ template or reference not found")
         
-        # Generate a certificate with sample data
-        from app.utils.goonj_renderer import GOONJRenderer
-        
         with tempfile.TemporaryDirectory() as tmpdir:
             renderer = GOONJRenderer(template_path, output_folder=tmpdir)
             
@@ -254,8 +252,6 @@ def test_smoke_alignment_verification():
     
     if not os.path.exists(template_path) or not os.path.exists(reference_path):
         pytest.skip("GOONJ template or reference not found")
-    
-    from app.utils.goonj_renderer import GOONJRenderer
     
     with tempfile.TemporaryDirectory() as tmpdir:
         renderer = GOONJRenderer(template_path, output_folder=tmpdir)
