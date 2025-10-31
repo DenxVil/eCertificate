@@ -53,12 +53,19 @@ def create_app(config_name='default'):
     # Create tables if they don't exist
     with app.app_context():
         try:
-            # SQLAlchemy's create_all() is idempotent by default
-            # It only creates tables that don't exist
-            db.create_all()
-            logger.info("Database tables initialized successfully")
+            # Check if tables already exist to avoid unnecessary logging
+            inspector = db.inspect(db.engine)
+            existing_tables = inspector.get_table_names()
+            
+            if not existing_tables or 'events' not in existing_tables:
+                # SQLAlchemy's create_all() is idempotent - only creates missing tables
+                db.create_all()
+                logger.info("Database tables created successfully")
+            else:
+                # Tables already exist, no action needed
+                logger.debug("Database tables already exist, skipping creation")
         except Exception as e:
-            # SQLAlchemy's create_all() should be idempotent, but log any unexpected errors
+            # Log any unexpected errors but don't prevent app startup
             logger.error(f"Failed to initialize database tables: {e}")
             # Don't raise - allow app to start but it may have issues
     

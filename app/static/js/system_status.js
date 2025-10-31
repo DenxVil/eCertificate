@@ -114,8 +114,22 @@
     document.getElementById('metric-template').textContent = data.template_exists ? '✓ OK' : '✗ Missing';
     document.getElementById('metric-template').style.color = data.template_exists ? '#10b981' : '#ef4444';
     
-    document.getElementById('metric-smtp').textContent = data.smtp_configured ? '✓ OK' : '✗ Not configured';
-    document.getElementById('metric-smtp').style.color = data.smtp_configured ? '#10b981' : '#f59e0b';
+    // Update SMTP metric with tooltip showing reason if disabled
+    const smtpMetric = document.getElementById('metric-smtp');
+    if (data.smtp_configured) {
+      smtpMetric.textContent = '✓ OK';
+      smtpMetric.style.color = '#10b981';
+      smtpMetric.title = data.smtp_status_details?.message || 'SMTP configured';
+    } else {
+      smtpMetric.textContent = '✗ Disabled';
+      smtpMetric.style.color = '#f59e0b';
+      // Set tooltip with detailed reason
+      if (data.smtp_status_details) {
+        smtpMetric.title = data.smtp_status_details.message || 'SMTP not configured';
+      } else {
+        smtpMetric.title = 'SMTP not configured';
+      }
+    }
     
     document.getElementById('metric-latency').textContent = `${data.latency_ms || 0}ms`;
     document.getElementById('metric-latency').style.color = data.latency_ms < 100 ? '#10b981' : data.latency_ms < 500 ? '#f59e0b' : '#ef4444';

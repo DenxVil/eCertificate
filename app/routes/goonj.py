@@ -76,19 +76,19 @@ def check_smtp_configuration():
     mail_sender = current_app.config.get('MAIL_DEFAULT_SENDER')
     
     if not mail_server:
-        issues.append("MAIL_SERVER not configured in .env file")
+        issues.append("MAIL_SERVER not configured")
     
     if not mail_port:
-        issues.append("MAIL_PORT not configured in .env file")
+        issues.append("MAIL_PORT not configured")
     
     if not mail_username:
-        issues.append("MAIL_USERNAME (email address) not configured in .env file")
+        issues.append("MAIL_USERNAME (email address) not configured")
     
     if not mail_password:
-        issues.append("MAIL_PASSWORD (app password) not configured in .env file")
+        issues.append("MAIL_PASSWORD (app password) not configured")
     
     if not mail_sender:
-        issues.append("MAIL_DEFAULT_SENDER not configured in .env file")
+        issues.append("MAIL_DEFAULT_SENDER not configured")
     
     configured = len(issues) == 0
     
@@ -505,6 +505,7 @@ def system_status():
     Returns JSON with:
     - template_exists: bool
     - smtp_configured: bool
+    - smtp_status_details: dict with configuration details and issues
     - engine_status: "operational" | "degraded" | "error"
     - latency_ms: int (approximate internal latency)
     - active_jobs_count: int
@@ -533,8 +534,9 @@ def system_status():
         template_path = os.path.abspath(template_path)
         template_exists = os.path.exists(template_path)
         
-        # Check SMTP
-        smtp_configured = bool(current_app.config.get('MAIL_USERNAME'))
+        # Check SMTP with detailed status
+        smtp_status = check_smtp_configuration()
+        smtp_configured = smtp_status['configured']
         
         # Count active jobs (pending or processing)
         try:
@@ -561,6 +563,7 @@ def system_status():
         status_data = {
             'template_exists': template_exists,
             'smtp_configured': smtp_configured,
+            'smtp_status_details': smtp_status,  # Include detailed SMTP status
             'engine_status': engine_status,
             'latency_ms': latency_ms,
             'active_jobs_count': active_jobs,
@@ -579,6 +582,11 @@ def system_status():
         return jsonify({
             'template_exists': False,
             'smtp_configured': False,
+            'smtp_status_details': {
+                'configured': False,
+                'message': 'Error checking SMTP configuration',
+                'issues': ['System error occurred']
+            },
             'engine_status': 'error',
             'latency_ms': int((time.time() - start_time) * 1000),
             'active_jobs_count': 0,
