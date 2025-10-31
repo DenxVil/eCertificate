@@ -4,7 +4,8 @@ A specialized web application for generating GOONJ event certificates with autom
 
 ## ✨ Features
 
-This application is designed specifically for the GOONJ certificate format, providing:
+This application is designed specifically for the GOONJ certificate format, providing
+:
 - ✅ **PNG Certificate Generation**: Generate high-quality PNG certificates with precise field alignment
 - ✅ **Three-Field Support**: Name, Event, and Organised By fields
 - ✅ **Automated Email Delivery**: Certificates are sent directly to participants via email
