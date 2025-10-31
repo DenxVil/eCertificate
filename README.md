@@ -1,40 +1,28 @@
-# 🎓 AMA Certificate Generator
+# 🎓 AMA GOONJ Certificate Generator
 
-A powerful web application for generating and distributing digital certificates with email delivery and Telegram bot integration.
+A specialized web application for generating GOONJ event certificates with automated delivery via email and Telegram bot integration.
 
-## ✨ Recent Updates
+## ✨ Features
 
-**Version 2.0** introduces comprehensive UI/UX enhancements:
-- 🎯 **Fixed certificate text alignment** using PIL anchor points for pixel-perfect positioning
-- 🎨 **Modern UI redesign** with light/dark themes, glassmorphism effects, and 3D animations
-- 📊 **Real-time system monitoring** with floating status widget
-- ♿ **Enhanced accessibility** with reduced-motion support and high-contrast modes
-- 📱 **Improved responsive design** for all screen sizes
-
-See [UI/UX Enhancements Documentation](docs/UI_UX_ENHANCEMENTS.md) for complete details.
-
-## Features
-
-- ✅ **Custom Certificate Templates**: Upload your own certificate designs (PNG, JPG, SVG)
-- ✅ **Event Management**: Create and manage multiple events with different templates
-- ✅ **Bulk Processing**: Upload participant lists via CSV or Excel files
-- ✅ **Automated Generation**: Certificates are generated automatically with participant names
-- ✅ **Email Delivery**: Certificates are sent directly to participants via email
-- ✅ **Telegram Bot**: Control the system through an integrated Telegram bot
-- ✅ **Job Tracking**: Monitor certificate generation jobs in real-time with progress bars
-- ✅ **Modern Web Interface**: Beautiful, accessible UI with light/dark themes
-- ✅ **System Monitoring**: Real-time status widget showing system health and metrics
+This application is designed specifically for the GOONJ certificate format, providing:
+- ✅ **PNG Certificate Generation**: Generate high-quality PNG certificates with precise field alignment
+- ✅ **Three-Field Support**: Name, Event, and Organised By fields
+- ✅ **Automated Email Delivery**: Certificates are sent directly to participants via email
+- ✅ **Telegram Bot Integration**: Control the system through an integrated Telegram bot
+- ✅ **Web Interface**: Simple form-based UI and REST API
+- ✅ **Bulk Processing**: Upload CSV files for batch certificate generation
+- ✅ **Alignment Verification**: Automated checks ensure perfect field positioning
 
 ## Technology Stack
 
 - **Backend**: Flask (Python 3.8+)
-- **Database**: SQLite (file-based, zero configuration) - see [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for alternatives
-- **Certificate Generation**: Pillow (PIL)
+- **Database**: SQLite (file-based, zero configuration)
+- **Certificate Generation**: Pillow (PIL) with bundled ARIALBD.TTF font
 - **Email**: Flask-Mail (SMTP)
 - **Bot**: python-telegram-bot
-- **Data Processing**: Pandas, openpyxl
+- **Data Processing**: Pandas for CSV handling
 
-> **Note:** SQLite is the default database (no setup required). For production or advanced use cases, you can use PostgreSQL, MySQL, or MongoDB. See [DATABASE_OPTIONS.md](DATABASE_OPTIONS.md) for detailed information on alternative databases and migration guides.
+> **Note:** This application uses the bundled `templates/ARIALBD.TTF` font exclusively for consistent rendering across all platforms.
 
 ## Installation
 
@@ -143,49 +131,41 @@ python bot.py
 
 ### Web Interface
 
-1. **Create an Event**
-   - Navigate to "Events" → "Create New Event"
-   - Enter event name and description
-   - Upload a certificate template (PNG, JPG, or SVG)
-   - Click "Create Event"
+Navigate to `/goonj` in your browser to access the certificate generation form.
 
-2. **Generate Certificates**
-   - Navigate to "Jobs" → "Create New Job"
-   - Select an event
-   - Add participants:
-     - Single entry: Enter name and email
-     - Bulk upload: Upload CSV/Excel file
-   - Click "Create Job"
+1. **Single Certificate Generation**
+   - Enter participant name
+   - Enter event name (optional, defaults to "GOONJ")
+   - Enter organization name (optional, defaults to "AMA")
+   - Click "Generate Certificate"
 
-3. **Track Progress**
-   - View job status in the "Jobs" list
-   - Click on a job to see detailed progress
-   - Monitor certificate generation and email delivery
+2. **Bulk Certificate Generation**
+   - Upload a CSV file with participant data
+   - First row of CSV is used for generation
+   - Optionally include email column for automated delivery
 
 ### CSV File Format
 
-Your CSV file should contain two columns: `name` and `email`
-
-Example:
+Your CSV file should contain the following columns:
 
 ```csv
-name,email
-John Doe,john@example.com
-Jane Smith,jane@example.com
-Alice Johnson,alice@example.com
+name,event,organiser,email
+John Doe,GOONJ 2025,AMA,john@example.com
+Jane Smith,GOONJ 2025,AMA,jane@example.com
+Alice Johnson,GOONJ 2025,AMA,alice@example.com
 ```
 
-### Telegram Bot Commands
+**Required columns:**
+- `name` - Participant name (required)
 
-- `/start` - Get welcome message and instructions
-- `/events` - List all available events
-- `/newjob` - Start a new certificate generation job
-- `/status <job_id>` - Check the status of a job
-- `/help` - Show help information
+**Optional columns:**
+- `event` - Event name (defaults to "GOONJ")
+- `organiser` or `organizer` - Organization name (defaults to "AMA")
+- `email` - Email address for automatic certificate delivery
 
 ### GOONJ Certificate Generation API
 
-The `/goonj/generate` endpoint allows single certificate generation with participant data.
+The `/goonj/generate` endpoint allows certificate generation with participant data.
 
 **Endpoint:** `POST /goonj/generate`
 
@@ -272,15 +252,30 @@ Returns comprehensive system health metrics:
 
 Use the browser page at `/goonj` to generate a single certificate or upload a CSV (first row used). The form includes three fields: Name, Event, and Organised By. Email can be included in CSV for optional delivery. The API `/goonj/generate` remains available for programmatic access.
 
-### Using the Telegram Bot
+## GOONJ Web Page
 
-1. Open Telegram and search for your bot
-2. Send `/start` to begin
-3. Send `/newjob` to create a new job
-4. Select an event by sending its ID
-5. Upload a CSV file with participant data
-6. Receive job confirmation with job ID
-7. Use `/status <job_id>` to check progress
+Use the browser page at `/goonj` to generate a single certificate or upload a CSV (first row used). The form includes three fields: Name, Event, and Organised By. Email can be included in CSV for optional delivery. The API `/goonj/generate` remains available for programmatic access.
+
+## Alignment Verification
+
+The repository includes an automated alignment check script:
+
+```bash
+python scripts/verify_alignment.py
+```
+
+This script:
+1. Generates a sample certificate with test data (SAMPLE NAME, SAMPLE EVENT, SAMPLE ORG)
+2. Saves it as `templates/generated_sample.png`
+3. Compares it pixel-by-pixel with `templates/Sample_certificate.png`
+4. Reports alignment status (CI-friendly with exit codes)
+
+**Exit codes:**
+- `0` - Alignment check passed
+- `1` - Alignment check failed (fields not properly positioned)
+- `2` - Script error (missing files, etc.)
+
+The check allows slight tolerance for anti-aliasing differences but will fail if text fields are not positioned correctly.
 
 ## Project Structure
 
@@ -289,12 +284,31 @@ eCertificate/
 ├── app/
 │   ├── __init__.py          # Flask app initialization
 │   ├── models/              # Database models
-│   │   └── __init__.py
+│   │   └── sqlite_models.py
 │   ├── routes/              # Route handlers
-│   │   ├── main.py
-│   │   ├── events.py
-│   │   └── jobs.py
+│   │   ├── main.py          # Home and about pages
+│   │   └── goonj.py         # GOONJ certificate generation
 │   ├── utils/               # Utility functions
+│   │   ├── goonj_renderer.py  # GOONJ certificate renderer
+│   │   ├── text_align.py      # Text alignment helpers
+│   │   └── email_sender.py    # Email delivery
+│   └── templates/           # HTML templates
+│       ├── base.html
+│       ├── index.html
+│       ├── goonj.html
+│       └── about.html
+├── templates/               # Certificate templates
+│   ├── goonj_certificate.png    # GOONJ template
+│   ├── Sample_certificate.png   # Reference for alignment
+│   ├── ARIALBD.TTF              # Bundled font file
+│   └── goonj_template_offsets.json  # Field position config
+├── scripts/                 # Utility scripts
+│   └── verify_alignment.py  # Alignment verification tool
+├── bot.py                   # Telegram bot
+├── app.py                   # Main application entry point
+├── requirements.txt         # Python dependencies
+└── README.md               # This file
+```
 │   │   ├── __init__.py
 │   │   ├── certificate_generator.py
 │   │   └── email_sender.py
@@ -381,19 +395,20 @@ The application supports multiple database backends. See [DATABASE_OPTIONS.md](D
 
 ## Customization
 
-### Certificate Template
+### GOONJ Certificate Template
 
-The certificate template should be an image file (PNG, JPG, or SVG) with space for:
-- Participant name (centered)
-- Event name
-- Date
+The GOONJ certificate uses a fixed template at `templates/goonj_certificate.png` with three text fields:
+- **Name**: Participant name (centered at ~33% height)
+- **Event**: Event name (centered at ~42% height)
+- **Organised By**: Organization name (centered at ~51% height)
 
-The default positions are:
-- Name: Center of the image, 50px above middle
-- Event: Center of the image, 50px below middle
-- Date: Center of the image, 150px from bottom
+Field positions are defined in `templates/goonj_template_offsets.json`. All text is rendered using the bundled `templates/ARIALBD.TTF` font in bold.
 
-You can customize these positions by modifying the `CertificateGenerator` class in `app/utils/certificate_generator.py`.
+**To customize field positions:**
+1. Edit `templates/goonj_template_offsets.json`
+2. Update the normalized `y` coordinates (0.0-1.0 range)
+3. Run `python scripts/verify_alignment.py` to verify changes
+4. Regenerate the reference: `templates/Sample_certificate.png`
 
 ### Email Template
 
@@ -436,53 +451,43 @@ docker compose up -d
 
 ### Certificate Generation Issues
 
-- Ensure the template file exists and is accessible
-- Check file permissions on upload and output folders
-- Verify PIL/Pillow is properly installed
-- Check available fonts on your system
+- Ensure the GOONJ template exists at `templates/goonj_certificate.png`
+- Verify the bundled font exists at `templates/ARIALBD.TTF`
+- Check file permissions on the output folder (`generated_certificates`)
+- Verify PIL/Pillow is properly installed: `pip install Pillow`
+- Run alignment check: `python scripts/verify_alignment.py`
 
 ## API Endpoints
 
 The application provides REST API endpoints:
 
-### Events
-- `GET /events/api` - List all events
-- `GET /events/api/<event_id>` - Get event details
+### GOONJ Certificates
+- `POST /goonj/generate` - Generate a certificate (supports JSON, form data, or CSV)
+- `GET /goonj/status` - Check GOONJ system status
 
-### Jobs
-- `GET /jobs/api` - List all jobs
-- `GET /jobs/api/<job_id>` - Get job status
-
-### System Monitoring (New in v2.0)
+### System Monitoring
 - `GET /goonj/api/system-status` - Get comprehensive system health metrics
 
 See [UI/UX Enhancements Documentation](docs/UI_UX_ENHANCEMENTS.md) for details on the system status API.
 
 ## Testing
 
-### Run Alignment Tests
-The certificate text alignment can be validated with the smoke test:
+### Run Alignment Verification
+The GOONJ certificate alignment can be verified with:
 ```bash
-python tools/tests/test_alignment.py
+python scripts/verify_alignment.py
 ```
 
-This test verifies that text is properly centered using PIL anchor points.
+This generates a sample certificate and compares it pixel-by-pixel with the reference to ensure perfect field positioning.
 
 ### Manual Testing Checklist
 After setup, test these features:
-- [ ] Generate a certificate with GOONJ endpoint
-- [ ] Toggle between light/dark themes (GOONJ page)
-- [ ] Check system status widget (bottom-right on GOONJ page)
-- [ ] View jobs list with progress bars
-- [ ] Test responsive design on mobile
-- [ ] Verify keyboard navigation works
-
-## New Features in v2.0
-
-### UI/UX Enhancements
-- **Modern Design System**: Complete redesign with CSS variables, gradients, and shadows
-- **Light/Dark Themes**: Toggle with persistent localStorage preference
-- **3D Creator Card**: Glassmorphism effects with hover animations
+- [ ] Generate a certificate via web form at `/goonj`
+- [ ] Generate a certificate via API: `POST /goonj/generate`
+- [ ] Upload CSV file for bulk generation
+- [ ] Verify email delivery (if SMTP configured)
+- [ ] Check system status: `GET /goonj/api/system-status`
+- [ ] Run alignment check: `python scripts/verify_alignment.py`
 - **System Status Widget**: Real-time monitoring of template, SMTP, jobs, and latency
 - **Progress Bars**: Visual job completion indicators in job lists
 - **Loading States**: Spinner animations on form submissions

@@ -104,33 +104,23 @@ class GOONJRenderer:
             logger.debug(f"Offsets file not found at {offsets_path}, using default positions")
     
     def _load_fonts(self):
-        """Load bold sans-serif fonts for text rendering.
+        """Load the bundled ARIALBD.TTF font for text rendering.
         
-        Attempts to load Arial Black or arialbd.ttf, falls back to DejaVuSans-Bold.
+        Uses the bundled font file at templates/ARIALBD.TTF exclusively.
+        Does not check for or use system fonts.
         """
-        # Font paths to try (bold sans-serif)
-        font_paths = [
-            "arialbd.ttf",  # Arial Bold
-            "/usr/share/fonts/truetype/msttcorefonts/arialbd.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/System/Library/Fonts/Supplemental/Arial Bold.ttf",  # macOS
-        ]
+        # Use bundled font file
+        template_dir = os.path.dirname(self.template_path)
+        bundled_font_path = os.path.join(template_dir, 'ARIALBD.TTF')
         
-        self.font_path = None
-        for path in font_paths:
-            try:
-                # Test if font can be loaded
-                ImageFont.truetype(path, 20)
-                self.font_path = path
-                logger.info(f"Using font: {path}")
-                break
-            except (OSError, IOError):
-                continue
+        if not os.path.exists(bundled_font_path):
+            raise FileNotFoundError(
+                f"Required font file not found at: {bundled_font_path}. "
+                "Please ensure templates/ARIALBD.TTF is present."
+            )
         
-        if not self.font_path:
-            logger.warning("Could not load bold TrueType fonts, using default font")
-            self.font_path = None  # Will use default
+        self.font_path = bundled_font_path
+        logger.info(f"Using bundled font: {bundled_font_path}")
     
     def _hex_to_rgb(self, hex_color):
         """Convert hex color to RGB tuple."""
