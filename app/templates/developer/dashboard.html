@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Developer Dashboard | eCertificate</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .header {
+      background: #2c3e50;
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    
+    .nav {
+      margin-top: 0.5rem;
+    }
+    
+    .nav a {
+      color: #ecf0f1;
+      text-decoration: none;
+      margin-right: 1.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    
+    .nav a:hover, .nav a.active {
+      background: rgba(255,255,255,0.1);
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+    
+    .section {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .section h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 0.5rem;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    
+    .status-badge.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status-badge.warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .status-badge.danger {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .config-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .config-table th {
+      text-align: left;
+      padding: 0.75rem;
+      background: #f8f9fa;
+      font-weight: 600;
+      border-bottom: 2px solid #dee2e6;
+    }
+    
+    .config-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #dee2e6;
+    }
+    
+    .config-table tr:hover {
+      background: #f8f9fa;
+    }
+    
+    .value-set {
+      color: #28a745;
+      font-weight: 600;
+    }
+    
+    .value-unset {
+      color: #dc3545;
+      font-weight: 600;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #6c757d;
+    }
+    
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 1rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+    }
+    
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #3498db;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #2980b9;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #dee2e6;
+    }
+    
+    .tab {
+      padding: 0.75rem 1.5rem;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+    }
+    
+    .tab:hover {
+      background: #f8f9fa;
+    }
+    
+    .tab.active {
+      border-bottom-color: #3498db;
+      color: #3498db;
+      font-weight: 600;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .category-section {
+      margin-bottom: 2rem;
+    }
+    
+    .category-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #dee2e6;
+    }
+    
+    code {
+      background: #f8f9fa;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🛠️ Developer Dashboard</h1>
+    <div class="nav">
+      <a href="/developer" class="active">Dashboard</a>
+      <a href="/developer/logs">Logs</a>
+      <a href="/developer/live-monitor">Live Monitor</a>
+      <a href="/goonj">GOONJ</a>
+      <a href="/">Home</a>
+    </div>
+  </div>
+  
+  <div class="container">
+    <div class="section">
+      <h2>System Status</h2>
+      <div id="system-info" class="loading">Loading system information...</div>
+    </div>
+    
+    <div class="section">
+      <h2>Mail Configuration</h2>
+      <div id="mail-config" class="loading">Loading mail configuration...</div>
+    </div>
+    
+    <div class="section">
+      <h2>Environment Configuration</h2>
+      
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('all')">All Variables</button>
+        <button class="tab" onclick="switchTab('flask')">Flask</button>
+        <button class="tab" onclick="switchTab('database')">Database</button>
+        <button class="tab" onclick="switchTab('mail')">Mail</button>
+        <button class="tab" onclick="switchTab('alignment')">Alignment</button>
+      </div>
+      
+      <div id="env-config" class="loading">Loading environment configuration...</div>
+    </div>
+  </div>
+  
+  <script>
+    let envData = null;
+    
+    // Load data on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadSystemInfo();
+      loadMailConfig();
+      loadEnvConfig();
+    });
+    
+    function loadSystemInfo() {
+      fetch('/developer/api/system-info')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            displaySystemInfo(data);
+          } else {
+            document.getElementById('system-info').innerHTML = 
+              '<div class="error">Error loading system info: ' + data.error + '</div>';
+          }
+        })
+        .catch(error => {
+          document.getElementById('system-info').innerHTML = 
+            '<div class="error">Error: ' + error.message + '</div>';
+        });
+    }
+    
+    function displaySystemInfo(data) {
+      const html = `
+        <div class="grid">
+          <div>
+            <strong>Python Version:</strong><br>
+            <code>${data.python_version.split('\\n')[0]}</code>
+          </div>
+          <div>
+            <strong>Debug Mode:</strong><br>
+            <span class="status-badge ${data.debug_mode ? 'warning' : 'success'}">
+              ${data.debug_mode ? 'Enabled' : 'Disabled'}
+            </span>
+          </div>
+          <div>
+            <strong>App Config:</strong><br>
+            <code>${data.app_config}</code>
+          </div>
+        </div>
+      `;
+      document.getElementById('system-info').innerHTML = html;
+    }
+    
+    function loadMailConfig() {
+      fetch('/developer/api/mail-config')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            displayMailConfig(data);
+          } else {
+            document.getElementById('mail-config').innerHTML = 
+              '<div class="error">Error loading mail config: ' + data.error + '</div>';
+          }
+        })
+        .catch(error => {
+          document.getElementById('mail-config').innerHTML = 
+            '<div class="error">Error: ' + error.message + '</div>';
+        });
+    }
+    
+    function displayMailConfig(data) {
+      let html = `
+        <div style="margin-bottom: 1rem;">
+          <strong>Overall Status:</strong>
+          <span class="status-badge ${data.all_configured ? 'success' : 'danger'}">
+            ${data.all_configured ? '✅ All Configured' : '❌ Not Configured'}
+          </span>
+        </div>
+      `;
+      
+      if (data.mail_username_issue) {
+        html += `
+          <div class="error" style="margin-bottom: 1rem;">
+            <strong>⚠️ MAIL_USERNAME Issue Detected:</strong><br>
+            MAIL_USERNAME is not set. This is preventing email functionality from working.
+          </div>
+        `;
+      }
+      
+      if (data.missing && data.missing.length > 0) {
+        html += `
+          <div style="margin-bottom: 1rem;">
+            <strong>Missing Configuration:</strong> ${data.missing.join(', ')}
+          </div>
+        `;
+      }
+      
+      html += '<table class="config-table"><thead><tr><th>Variable</th><th>Environment</th><th>Config</th><th>Status</th></tr></thead><tbody>';
+      
+      for (const [key, value] of Object.entries(data.config)) {
+        html += `
+          <tr>
+            <td><code>${key}</code></td>
+            <td>${value.env || '<em>not set</em>'}</td>
+            <td>${value.config || '<em>not set</em>'}</td>
+            <td><span class="${value.is_set ? 'value-set' : 'value-unset'}">${value.is_set ? '✓ Set' : '✗ Not Set'}</span></td>
+          </tr>
+        `;
+      }
+      
+      html += '</tbody></table>';
+      document.getElementById('mail-config').innerHTML = html;
+    }
+    
+    function loadEnvConfig() {
+      fetch('/developer/api/env-config')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            envData = data;
+            displayEnvConfig('all');
+          } else {
+            document.getElementById('env-config').innerHTML = 
+              '<div class="error">Error loading env config: ' + data.error + '</div>';
+          }
+        })
+        .catch(error => {
+          document.getElementById('env-config').innerHTML = 
+            '<div class="error">Error: ' + error.message + '</div>';
+        });
+    }
+    
+    function displayEnvConfig(category) {
+      if (!envData) return;
+      
+      let html = '';
+      
+      if (category === 'all') {
+        // Display all grouped by category
+        for (const [cat, vars] of Object.entries(envData.grouped)) {
+          html += `<div class="category-section">`;
+          html += `<div class="category-title">${cat}</div>`;
+          html += '<table class="config-table"><thead><tr><th>Variable</th><th>Value</th><th>Source</th><th>Status</th></tr></thead><tbody>';
+          
+          vars.forEach(v => {
+            html += `
+              <tr>
+                <td><code>${v.name}</code>${v.required ? ' <span class="status-badge danger" style="font-size: 0.7rem;">REQUIRED</span>' : ''}</td>
+                <td>${v.value || '<em>not set</em>'}</td>
+                <td>${v.source}</td>
+                <td><span class="${v.is_set ? 'value-set' : 'value-unset'}">${v.is_set ? '✓ Set' : '✗ Not Set'}</span></td>
+              </tr>
+            `;
+          });
+          
+          html += '</tbody></table></div>';
+        }
+      } else {
+        // Display specific category
+        const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
+        const vars = envData.grouped[categoryName];
+        
+        if (vars) {
+          html += '<table class="config-table"><thead><tr><th>Variable</th><th>Value</th><th>Source</th><th>Status</th></tr></thead><tbody>';
+          
+          vars.forEach(v => {
+            html += `
+              <tr>
+                <td><code>${v.name}</code>${v.required ? ' <span class="status-badge danger" style="font-size: 0.7rem;">REQUIRED</span>' : ''}</td>
+                <td>${v.value || '<em>not set</em>'}</td>
+                <td>${v.source}</td>
+                <td><span class="${v.is_set ? 'value-set' : 'value-unset'}">${v.is_set ? '✓ Set' : '✗ Not Set'}</span></td>
+              </tr>
+            `;
+          });
+          
+          html += '</tbody></table>';
+        } else {
+          html = '<p>No variables found for this category.</p>';
+        }
+      }
+      
+      document.getElementById('env-config').innerHTML = html;
+    }
+    
+    function switchTab(category) {
+      // Update active tab
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      // Display category
+      displayEnvConfig(category);
+    }
+  </script>
+</body>
+</html>

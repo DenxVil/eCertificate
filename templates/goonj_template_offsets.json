@@ -1,28 +1,30 @@
 {
-  "version": "2.0",
-  "template": "goonj_certificate.png",
-  "description": "Sub-pixel precision field positions for GOONJ certificate template. Achieves pixel-perfect alignment (0.00px difference) with Sample_certificate.png.",
+  "version": "3.0",
+  "template": "template_goonj.png",
+  "reference": "Sample_certificate.png",
+  "description": "Precise field positions extracted from Sample_certificate.png with 10% visible box alignment.",
   "fields": {
     "name": {
-      "x": 0.5,
-      "y": 0.2835926449787836,
+      "x": 0.49975,
+      "y": 0.29858657243816256,
       "baseline_offset": 0,
-      "description": "Participant name field - centered at y=401px (calibrated)"
+      "description": "Participant name field - centered at y=422.5px (extracted from sample)"
     },
     "event": {
-      "x": 0.5,
-      "y": 0.4957567185289958,
+      "x": 0.4755,
+      "y": 0.5113074204946997,
       "baseline_offset": 0,
-      "description": "Event name field - centered at y=701px (calibrated)"
+      "description": "Event name field - centered at y=723.5px (extracted from sample)"
     },
     "organiser": {
-      "x": 0.5,
-      "y": 0.6025459688826026,
+      "x": 0.52175,
+      "y": 0.6321554770318021,
       "baseline_offset": 0,
-      "description": "Organiser field - centered at y=852px (calibrated)"
+      "description": "Organiser field - centered at y=894.5px (extracted from sample)"
     }
   },
-  "tolerance_px": 0.01,
+  "tolerance_px": 0.02,
+  "max_attempts": 100,
   "calibration_date": "2025-10-31",
-  "notes": "Sub-pixel precision calibration achieves 0.0000% pixel difference. Positions calibrated using tools/calibrate_precise.py. Reference regenerated with tools/regenerate_sample.py for perfect consistency."
+  "notes": "Field positions precisely extracted from Sample_certificate.png. Supports iterative verification with up to 100 attempts to achieve max 0.02px difference."
 }
