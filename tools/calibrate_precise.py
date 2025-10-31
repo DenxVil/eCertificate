@@ -33,6 +33,24 @@ def find_text_center(img_arr, y_search_start, y_search_end):
     return None, None, None
 
 
+def _render_text_at_position(template, width, text, font, y_pos, baseline_offset):
+    """Helper function to render text at a specific position."""
+    test_img = template.copy()
+    draw = ImageDraw.Draw(test_img)
+    
+    draw_text_centered(
+        draw,
+        (width // 2, y_pos),
+        text,
+        font,
+        (0, 0, 0),
+        align='center',
+        baseline_offset=baseline_offset
+    )
+    
+    return test_img
+
+
 def calibrate_field(template_path, font_path, reference_img, field_config, text):
     """Calibrate a single field to match reference."""
     template = Image.open(template_path).convert('RGB')
@@ -54,6 +72,7 @@ def calibrate_field(template_path, font_path, reference_img, field_config, text)
     # Binary search for the exact Y position that matches
     base_font_size = field_config.get('base_font_size', int(height * 0.05))
     font = ImageFont.truetype(font_path, base_font_size)
+    baseline_offset = field_config.get('baseline_offset', 0)
     
     best_y = y_current
     best_error = float('inf')
@@ -63,18 +82,7 @@ def calibrate_field(template_path, font_path, reference_img, field_config, text)
         test_y = y_current + y_offset
         
         # Render text at this position
-        test_img = template.copy()
-        draw = ImageDraw.Draw(test_img)
-        
-        draw_text_centered(
-            draw,
-            (width // 2, test_y),
-            text,
-            font,
-            (0, 0, 0),
-            align='center',
-            baseline_offset=field_config.get('baseline_offset', 0)
-        )
+        test_img = _render_text_at_position(template, width, text, font, test_y, baseline_offset)
         
         # Find text center in generated image
         gen_arr = np.array(test_img)
@@ -92,18 +100,7 @@ def calibrate_field(template_path, font_path, reference_img, field_config, text)
             test_y = best_y + y_offset
             
             # Render text at this position
-            test_img = template.copy()
-            draw = ImageDraw.Draw(test_img)
-            
-            draw_text_centered(
-                draw,
-                (width // 2, test_y),
-                text,
-                font,
-                (0, 0, 0),
-                align='center',
-                baseline_offset=field_config.get('baseline_offset', 0)
-            )
+            test_img = _render_text_at_position(template, width, text, font, test_y, baseline_offset)
             
             # Find text center in generated image
             gen_arr = np.array(test_img)
@@ -190,7 +187,15 @@ def main():
         print()
     
     # Save calibrated offsets
-    new_offsets['version'] = str(float(offsets_data.get('version', '1.0')) + 0.1)
+    # Update version using string manipulation to avoid float precision issues
+    old_version = offsets_data.get('version', '1.0')
+    try:
+        major, minor = str(old_version).split('.')
+        new_version = f"{major}.{int(minor) + 1}"
+    except (ValueError, AttributeError):
+        new_version = "2.0"
+    
+    new_offsets['version'] = new_version
     new_offsets['tolerance_px'] = 0.01
     new_offsets['notes'] = 'Sub-pixel precision calibration to match Sample_certificate.png within 0.01px tolerance.'
     

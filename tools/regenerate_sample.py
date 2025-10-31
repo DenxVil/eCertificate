@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.utils.goonj_renderer import GOONJRenderer
 from PIL import Image
+import numpy as np
 import shutil
 
 
@@ -66,7 +67,11 @@ def main():
     reference_img = Image.open(output_path)
     generated_img = Image.open(cert_path)
     
-    if list(reference_img.getdata()) == list(generated_img.getdata()):
+    # Use numpy for efficient array comparison
+    ref_arr = np.array(reference_img)
+    gen_arr = np.array(generated_img)
+    
+    if np.array_equal(ref_arr, gen_arr):
         print("✅ PERFECT MATCH - Pixel-perfect alignment achieved!")
         return 0
     else:
