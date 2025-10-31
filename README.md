@@ -4,8 +4,7 @@ A specialized web application for generating GOONJ event certificates with autom
 
 ## ✨ Features
 
-This application is designed specifically for the GOONJ certificate format, providing
-:
+This application is designed specifically for the GOONJ certificate format, providing:
 - ✅ **PNG Certificate Generation**: Generate high-quality PNG certificates with precise field alignment
 - ✅ **Three-Field Support**: Name, Event, and Organised By fields
 - ✅ **Automated Email Delivery**: Certificates are sent directly to participants via email
@@ -13,6 +12,7 @@ This application is designed specifically for the GOONJ certificate format, prov
 - ✅ **Web Interface**: Simple form-based UI and REST API
 - ✅ **Bulk Processing**: Upload CSV files for batch certificate generation
 - ✅ **Alignment Verification**: Automated checks ensure perfect field positioning
+- ✅ **Pixel-Perfect Quality**: <0.01px alignment verification before sending certificates
 
 ## Technology Stack
 
@@ -259,7 +259,32 @@ Use the browser page at `/goonj` to generate a single certificate or upload a CS
 
 ## Alignment Verification
 
-The repository includes an automated alignment check script with **pixel-perfect accuracy** (0.01px tolerance):
+The repository includes **automated pixel-perfect alignment verification** with **<0.01px tolerance**:
+
+### Pre-Send Verification (NEW ✨)
+
+Every certificate is automatically verified before being sent to ensure pixel-perfect quality:
+
+```bash
+# Configuration in .env
+ENABLE_ALIGNMENT_CHECK=True           # Enable verification (default: True)
+ALIGNMENT_TOLERANCE_PX=0.01           # Maximum allowed pixel difference
+ALIGNMENT_MAX_ATTEMPTS=3              # Number of verification attempts
+```
+
+**How it works:**
+1. Certificate is generated
+2. Automatically compared pixel-by-pixel with reference sample
+3. Verified to be within <0.01px tolerance
+4. Retries if needed (up to 3 attempts)
+5. **Blocks sending** if verification fails
+6. Logs all attempts and results
+
+See [Alignment Verification Documentation](docs/ALIGNMENT_VERIFICATION.md) for complete details.
+
+### Manual Verification Script
+
+You can also manually verify alignment:
 
 ```bash
 python scripts/verify_alignment.py
