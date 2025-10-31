@@ -235,7 +235,7 @@ def _generate_overlay(image, details, original_path, tolerance_px):
     # Load a font for labels
     try:
         font = ImageFont.truetype("arial.ttf", 16)
-    except:
+    except (OSError, IOError):
         font = ImageFont.load_default()
     
     # Draw markers and comparison lines
@@ -268,7 +268,8 @@ def _generate_overlay(image, details, original_path, tolerance_px):
     draw.text((10, legend_y + 40), f"Tolerance: {tolerance_px}px", fill=(255, 255, 255), font=font)
     
     # Save overlay
-    overlay_path = original_path.replace('.png', '_validation_overlay.png')
+    base_path, ext = os.path.splitext(original_path)
+    overlay_path = f"{base_path}_validation_overlay{ext if ext else '.png'}"
     overlay.save(overlay_path)
     logger.info(f"Validation overlay saved to {overlay_path}")
     

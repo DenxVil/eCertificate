@@ -122,9 +122,10 @@ Examples:
         return 0 if result['pass'] else 1
         
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error during validation: {e}")
         print(f"Error during validation: {e}", file=sys.stderr)
-        import traceback
-        traceback.print_exc()
         return 2
 
 

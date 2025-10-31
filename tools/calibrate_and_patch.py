@@ -188,9 +188,10 @@ def main():
         return 0
         
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error during calibration: {e}")
         print(f"\n❌ Error during calibration: {e}", file=sys.stderr)
-        import traceback
-        traceback.print_exc()
         return 2
 
 
