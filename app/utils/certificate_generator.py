@@ -125,10 +125,11 @@ class CertificateGenerator:
             Path to the generated certificate
         """
         # Define a default, well-aligned layout using the advanced 'generate' method
-        # Positions based on IMG_0929.png template analysis:
-        # - NAME placeholder at Y=0.446 (631px)
-        # - EVENT placeholder at Y=0.636 (899px)
-        # - DATE footer area at Y=0.919 (1299px)
+        # Positions based on IMG_0929.png template analysis (2000x1414px):
+        # - NAME placeholder at Y=0.446 (631px / 1414px)
+        # - EVENT placeholder at Y=0.636 (899px / 1414px)
+        # - DATE footer area at Y=0.919 (1299px / 1414px)
+        # See docs/FIELD_POSITIONING.md and templates/IMG_0929_offsets.json for details
         fields = [
             {
                 "text": participant_name,
