@@ -182,6 +182,12 @@
       </label>
       <button class="btn btn-primary" onclick="loadLogs()">Refresh</button>
       <button class="btn btn-secondary" onclick="clearDisplay()">Clear Display</button>
+      <button class="btn btn-secondary" onclick="checkAzureLogs()">Azure Logs Status</button>
+    </div>
+    
+    <div id="azure-status" style="display: none; background: #fff3cd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #ffc107;">
+      <h3 style="margin-top: 0; color: #856404;">☁️ Azure Application Insights</h3>
+      <div id="azure-status-content"></div>
     </div>
     
     <div class="logs-container" id="logs-container">
@@ -195,6 +201,7 @@
     // Load logs on page load
     document.addEventListener('DOMContentLoaded', function() {
       loadLogs();
+      checkAzureLogs();
       
       // Auto-refresh every 5 seconds
       setInterval(loadLogs, 5000);
@@ -281,6 +288,49 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+    
+    function checkAzureLogs() {
+      fetch('/developer/api/azure-logs')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const statusDiv = document.getElementById('azure-status');
+            const contentDiv = document.getElementById('azure-status-content');
+            
+            if (data.azure_config.configured) {
+              statusDiv.style.display = 'block';
+              statusDiv.style.background = '#d1ecf1';
+              statusDiv.style.borderLeftColor = '#0c5460';
+              
+              let html = '<p style="color: #0c5460;"><strong>Status:</strong> ✅ Enabled</p>';
+              
+              if (data.azure_config.instrumentation_key_preview) {
+                html += '<p style="color: #0c5460;"><strong>Instrumentation Key:</strong> ' + data.azure_config.instrumentation_key_preview + '</p>';
+              }
+              
+              if (data.azure_config.handler_active !== undefined) {
+                html += '<p style="color: #0c5460;"><strong>Handler Active:</strong> ' + (data.azure_config.handler_active ? 'Yes' : 'No') + '</p>';
+              }
+              
+              html += '<p style="color: #0c5460;"><strong>Info:</strong> ' + data.message + '</p>';
+              html += '<p style="color: #0c5460;"><em>View detailed logs and analytics in the Azure Portal under Application Insights.</em></p>';
+              
+              contentDiv.innerHTML = html;
+            } else {
+              statusDiv.style.display = 'block';
+              statusDiv.style.background = '#fff3cd';
+              statusDiv.style.borderLeftColor = '#ffc107';
+              
+              contentDiv.innerHTML = '<p style="color: #856404;"><strong>Status:</strong> ⚠️ Not Configured</p>' +
+                '<p style="color: #856404;">' + data.message + '</p>' +
+                '<p style="color: #856404;"><em>To enable Azure logging, set APPINSIGHTS_INSTRUMENTATION_KEY or APPINSIGHTS_CONNECTION_STRING in your .env file.</em></p>';
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error checking Azure logs:', error);
+        });
     }
   </script>
 </body>

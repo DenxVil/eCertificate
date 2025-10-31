@@ -255,6 +255,56 @@ def api_logs():
         }), 500
 
 
+@developer_bp.route('/api/azure-logs')
+def api_azure_logs():
+    """Get Azure Application Insights configuration and status."""
+    try:
+        # Check if Azure is configured
+        instrumentation_key = os.getenv('APPINSIGHTS_INSTRUMENTATION_KEY')
+        connection_string = os.getenv('APPINSIGHTS_CONNECTION_STRING')
+        
+        is_configured = bool(instrumentation_key or connection_string)
+        
+        # Get configuration details (mask sensitive data)
+        azure_config = {
+            'configured': is_configured,
+            'has_instrumentation_key': bool(instrumentation_key),
+            'has_connection_string': bool(connection_string),
+            'instrumentation_key_preview': (
+                instrumentation_key[:8] + '...' + instrumentation_key[-4:] 
+                if instrumentation_key and len(instrumentation_key) > 12 
+                else None
+            ),
+            'status': 'enabled' if is_configured else 'not_configured'
+        }
+        
+        # If configured, try to get the logger status
+        if is_configured:
+            try:
+                import logging
+                root_logger = logging.getLogger()
+                azure_handlers = [
+                    h for h in root_logger.handlers 
+                    if 'AzureLogHandler' in str(type(h))
+                ]
+                azure_config['handler_active'] = len(azure_handlers) > 0
+                azure_config['handler_count'] = len(azure_handlers)
+            except Exception as e:
+                azure_config['handler_error'] = str(e)
+        
+        return jsonify({
+            'success': True,
+            'azure_config': azure_config,
+            'message': 'Azure logs can be viewed in Azure Portal Application Insights' if is_configured else 'Azure Application Insights not configured'
+        })
+    except Exception as e:
+        logger.exception("Error checking Azure logs configuration")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @developer_bp.route('/api/live-activity')
 def api_live_activity():
     """Get live bot/system activity."""

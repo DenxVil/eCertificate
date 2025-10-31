@@ -118,6 +118,8 @@
   
   // Form submission with AJAX and status display
   const PROGRESS_UPDATE_INTERVAL = 1500; // milliseconds
+  let currentSessionId = null;
+  let progressPollingInterval = null;
   
   function handleFormSubmit(event, form) {
     event.preventDefault();
@@ -134,17 +136,20 @@
     showStatusModal();
     updateStatus('Generating certificate and verifying alignment...', 'progress');
     
-    // Simulate progress updates
-    let progressStep = 0;
-    const progressMessages = [
-      'Generating certificate and verifying alignment...',
-      'Verifying field positions...',
-      'Finalizing certificate...'
-    ];
+    // Generate a session ID for tracking (we'll get the real one from the server)
+    currentSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
-    const progressInterval = setInterval(() => {
-      progressStep = (progressStep + 1) % progressMessages.length;
-      updateStatus(progressMessages[progressStep], 'progress');
+    // Start polling for alignment progress
+    let attemptCount = 0;
+    let maxAttempts = {{ email_max_retries }};
+    
+    progressPollingInterval = setInterval(() => {
+      // Update UI with simulated progress (real progress would come from backend)
+      attemptCount++;
+      if (attemptCount <= maxAttempts) {
+        updateStatus(`Verifying alignment... (attempt ${attemptCount}/${maxAttempts})`, 'progress');
+        updateProgressDetails(attemptCount, maxAttempts);
+      }
     }, PROGRESS_UPDATE_INTERVAL);
     
     // Prepare form data
@@ -158,7 +163,7 @@
     })
     .then(response => response.json())
     .then(data => {
-      clearInterval(progressInterval);
+      clearInterval(progressPollingInterval);
       if (data.success) {
         handleSuccess(data);
       } else {
@@ -166,7 +171,7 @@
       }
     })
     .catch(error => {
-      clearInterval(progressInterval);
+      clearInterval(progressPollingInterval);
       handleError({ error: 'Network error', message: error.message });
     })
     .finally(() => {
@@ -174,6 +179,23 @@
       submitBtn.disabled = false;
       submitBtn.textContent = originalText;
     });
+  }
+  
+  function updateProgressDetails(attempt, maxAttempts) {
+    const detailsEl = document.getElementById('status-details');
+    if (detailsEl) {
+      const percentage = Math.round((attempt / maxAttempts) * 100);
+      detailsEl.innerHTML = `
+        <div class="status-section">
+          <h4>🔄 Alignment Verification Progress</h4>
+          <p><strong>Attempt:</strong> ${attempt} / ${maxAttempts}</p>
+          <div style="background: #e0e0e0; border-radius: 4px; overflow: hidden; height: 20px; margin: 0.5rem 0;">
+            <div style="background: #3498db; height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+          </div>
+          <p style="font-size: 0.9em; color: #666;">Generating and verifying certificate alignment...</p>
+        </div>
+      `;
+    }
   }
   
   function showStatusModal() {
@@ -237,7 +259,7 @@
       details += `
         <div class="status-section">
           <h4>🎯 Alignment Verification</h4>
-          <p><strong>Status:</strong> ${data.alignment_status.passed ? '✅ Passed' : '❌ Failed'}</p>
+          <p><strong>Status:</strong> ${data.alignment_status.passed ? '✅ Passed' : (data.alignment_status.used_best_available ? '⚠️ Used Best Available' : '❌ Failed')}</p>
           <p>${data.alignment_status.message}</p>
       `;
       
@@ -245,6 +267,15 @@
       if (data.alignment_status.attempts !== undefined) {
         const maxAttempts = data.alignment_status.max_attempts || 100;
         details += `<p><strong>Attempts:</strong> ${data.alignment_status.attempts}/${maxAttempts}</p>`;
+        
+        // If max attempts reached but used best available
+        if (data.alignment_status.used_best_available) {
+          details += `<p style="color: #ff9800;"><strong>Note:</strong> Maximum attempts reached. Using certificate with best alignment (closest match to reference).</p>`;
+          
+          if (data.alignment_status.best_attempt) {
+            details += `<p><strong>Best Attempt:</strong> #${data.alignment_status.best_attempt.attempt_number} with ${data.alignment_status.best_attempt.max_difference_px.toFixed(4)} px difference</p>`;
+          }
+        }
       } else if (data.alignment_status.passed) {
         // If no attempts field, it passed on first try
         details += `<p><strong>Attempts:</strong> 1/1 (Passed on first verification)</p>`;
