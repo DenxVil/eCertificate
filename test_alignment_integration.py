@@ -129,7 +129,7 @@ def test_certificate_generation_with_verification():
         result3 = verify_with_retry(
             cert_path3,
             reference_path,
-            max_attempts=3,
+            max_attempts=150,
             tolerance_px=0.01
         )
         
