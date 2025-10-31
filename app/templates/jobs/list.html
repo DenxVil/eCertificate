@@ -1,13 +1,153 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+  .jobs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  
+  .jobs-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 1rem;
+    background: var(--bg-card, white);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  .jobs-table thead tr {
+    background: linear-gradient(135deg, rgba(14, 165, 160, 0.08), rgba(37, 99, 235, 0.08));
+  }
+  
+  .jobs-table th {
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  
+  .jobs-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #1f2937;
+  }
+  
+  .jobs-table tbody tr {
+    transition: all 0.2s ease;
+  }
+  
+  .jobs-table tbody tr:hover {
+    background: #f9fafb;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  
+  .status-completed {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  
+  .status-processing {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  
+  .status-failed {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  
+  .status-pending {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  
+  .progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .progress-bar-wrapper {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #0ea5a0, #2563eb);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  
+  .progress-text {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+    border-radius: 12px;
+    border: 2px dashed #d1d5db;
+  }
+  
+  .empty-state h3 {
+    margin: 0 0 1rem;
+    color: #374151;
+    font-size: 20px;
+  }
+  
+  .empty-state p {
+    color: #6b7280;
+    margin: 0 0 1.5rem;
+  }
+  
+  @media (max-width: 768px) {
+    .jobs-table {
+      font-size: 13px;
+    }
+    
+    .jobs-table th,
+    .jobs-table td {
+      padding: 10px 12px;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+<div class="jobs-header">
     <h1>Certificate Generation Jobs</h1>
     <a href="/jobs/create" class="btn">Create New Job</a>
 </div>
 
 {% if jobs %}
-    <table>
+    <table class="jobs-table">
         <thead>
             <tr>
                 <th>Job ID</th>
@@ -22,32 +162,35 @@
         <tbody>
             {% for job in jobs %}
             <tr>
-                <td>{{ job.id }}</td>
+                <td><strong>#{{ job.id }}</strong></td>
                 <td>{{ job.event.name }}</td>
                 <td>
-                    <span style="padding: 5px 10px; border-radius: 5px; 
-                        {% if job.status == 'completed' %}background: #d4edda; color: #155724;
-                        {% elif job.status == 'processing' %}background: #fff3cd; color: #856404;
-                        {% elif job.status == 'failed' %}background: #f8d7da; color: #721c24;
-                        {% else %}background: #d1ecf1; color: #0c5460;{% endif %}">
-                        {{ job.status.upper() }}
+                    <span class="status-badge status-{{ job.status }}">
+                        {{ job.status }}
                     </span>
                 </td>
-                <td>{{ job.generated_certificates }}/{{ job.total_certificates }}</td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar" style="width: {% if job.total_certificates > 0 %}{{ (job.generated_certificates / job.total_certificates * 100)|round|int }}{% else %}0{% endif %}%"></div>
+                        </div>
+                        <span class="progress-text">{{ job.generated_certificates }}/{{ job.total_certificates }}</span>
+                    </div>
+                </td>
                 <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else 'N/A' }}</td>
                 <td>{{ job.completed_at.strftime('%Y-%m-%d %H:%M') if job.completed_at else '-' }}</td>
                 <td>
-                    <a href="/jobs/{{ job.id }}" class="btn" style="padding: 5px 10px; font-size: 0.9rem;">View</a>
+                    <a href="/jobs/{{ job.id }}" class="btn" style="padding: 6px 14px; font-size: 13px;">View</a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 {% else %}
-    <div style="text-align: center; padding: 3rem; background: #f8f9fa; border-radius: 10px;">
+    <div class="empty-state">
         <h3>No Jobs Found</h3>
-        <p style="color: #666; margin: 1rem 0;">Create your first job to start generating certificates.</p>
-        <a href="/jobs/create" class="btn">Create Job</a>
+        <p>Create your first job to start generating certificates.</p>
+        <a href="/jobs/create" class="btn primary">Create Your First Job</a>
     </div>
 {% endif %}
 {% endblock %}

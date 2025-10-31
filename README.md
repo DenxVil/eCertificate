@@ -2,6 +2,17 @@
 
 A powerful web application for generating and distributing digital certificates with email delivery and Telegram bot integration.
 
+## ✨ Recent Updates
+
+**Version 2.0** introduces comprehensive UI/UX enhancements:
+- 🎯 **Fixed certificate text alignment** using PIL anchor points for pixel-perfect positioning
+- 🎨 **Modern UI redesign** with light/dark themes, glassmorphism effects, and 3D animations
+- 📊 **Real-time system monitoring** with floating status widget
+- ♿ **Enhanced accessibility** with reduced-motion support and high-contrast modes
+- 📱 **Improved responsive design** for all screen sizes
+
+See [UI/UX Enhancements Documentation](docs/UI_UX_ENHANCEMENTS.md) for complete details.
+
 ## Features
 
 - ✅ **Custom Certificate Templates**: Upload your own certificate designs (PNG, JPG, SVG)
@@ -10,8 +21,9 @@ A powerful web application for generating and distributing digital certificates 
 - ✅ **Automated Generation**: Certificates are generated automatically with participant names
 - ✅ **Email Delivery**: Certificates are sent directly to participants via email
 - ✅ **Telegram Bot**: Control the system through an integrated Telegram bot
-- ✅ **Job Tracking**: Monitor certificate generation jobs in real-time
-- ✅ **Web Interface**: User-friendly web interface for all operations
+- ✅ **Job Tracking**: Monitor certificate generation jobs in real-time with progress bars
+- ✅ **Modern Web Interface**: Beautiful, accessible UI with light/dark themes
+- ✅ **System Monitoring**: Real-time status widget showing system health and metrics
 
 ## Technology Stack
 
@@ -233,6 +245,23 @@ John Doe,GOONJ 2025,AMA" \
 curl http://localhost:5000/goonj/status
 ```
 
+**Get System Status (New in v2.0):**
+```bash
+curl http://localhost:5000/goonj/api/system-status
+```
+
+Returns comprehensive system health metrics:
+```json
+{
+  "template_exists": true,
+  "smtp_configured": true,
+  "engine_status": "operational",
+  "latency_ms": 45,
+  "active_jobs_count": 2,
+  "last_updated": "2025-10-30T21:54:27.123Z"
+}
+```
+
 **Notes:**
 - Only three fields are rendered on the certificate: Name, Event, and Organised By
 - If `email` is provided in CSV/JSON and SMTP is configured, the certificate will be automatically emailed to the participant
@@ -423,6 +452,49 @@ The application provides REST API endpoints:
 ### Jobs
 - `GET /jobs/api` - List all jobs
 - `GET /jobs/api/<job_id>` - Get job status
+
+### System Monitoring (New in v2.0)
+- `GET /goonj/api/system-status` - Get comprehensive system health metrics
+
+See [UI/UX Enhancements Documentation](docs/UI_UX_ENHANCEMENTS.md) for details on the system status API.
+
+## Testing
+
+### Run Alignment Tests
+The certificate text alignment can be validated with the smoke test:
+```bash
+python tools/tests/test_alignment.py
+```
+
+This test verifies that text is properly centered using PIL anchor points.
+
+### Manual Testing Checklist
+After setup, test these features:
+- [ ] Generate a certificate with GOONJ endpoint
+- [ ] Toggle between light/dark themes (GOONJ page)
+- [ ] Check system status widget (bottom-right on GOONJ page)
+- [ ] View jobs list with progress bars
+- [ ] Test responsive design on mobile
+- [ ] Verify keyboard navigation works
+
+## New Features in v2.0
+
+### UI/UX Enhancements
+- **Modern Design System**: Complete redesign with CSS variables, gradients, and shadows
+- **Light/Dark Themes**: Toggle with persistent localStorage preference
+- **3D Creator Card**: Glassmorphism effects with hover animations
+- **System Status Widget**: Real-time monitoring of template, SMTP, jobs, and latency
+- **Progress Bars**: Visual job completion indicators in job lists
+- **Loading States**: Spinner animations on form submissions
+- **Accessibility**: Reduced motion support, high contrast modes, keyboard navigation
+
+### Technical Improvements
+- **PIL Anchor Points**: Fixed text alignment using 'mm' anchor for precise centering
+- **Performance**: Optimized CSS with transforms and will-change properties
+- **Caching**: 2-second cache on system status endpoint
+- **Responsive**: Mobile-first design with breakpoints for all screen sizes
+
+See [docs/UI_UX_ENHANCEMENTS.md](docs/UI_UX_ENHANCEMENTS.md) for comprehensive documentation.
 
 ## Security Considerations
 
