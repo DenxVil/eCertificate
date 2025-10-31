@@ -53,10 +53,14 @@ def create_app(config_name='default'):
     # Create tables if they don't exist
     with app.app_context():
         try:
+            # SQLAlchemy's create_all() is idempotent by default
+            # It only creates tables that don't exist
             db.create_all()
-            logger.info("Database tables created successfully")
+            logger.info("Database tables initialized successfully")
         except Exception as e:
-            logger.error(f"Failed to create database tables: {e}")
+            # SQLAlchemy's create_all() should be idempotent, but log any unexpected errors
+            logger.error(f"Failed to initialize database tables: {e}")
+            # Don't raise - allow app to start but it may have issues
     
     # Initialize mail
     try:

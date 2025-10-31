@@ -47,6 +47,11 @@
             <input id="organiser" name="organiser" type="text" value="AMA" placeholder="AMA">
           </div>
           <div class="field">
+            <label for="email">Email (optional)</label>
+            <input id="email" name="email" type="email" placeholder="name@example.com">
+            <small class="muted">If provided and SMTP is configured, certificate will be sent to this email.</small>
+          </div>
+          <div class="field">
             <label for="format">Format</label>
             <select id="format" name="format">
               <option value="png">PNG</option>
@@ -129,10 +134,20 @@
     .then(r => r.json())
     .then(data => {
       const el = document.getElementById('status');
-      const tpl = data.template_exists ? 'Template OK' : 'Template MISSING';
-      const smtp = data.smtp_configured ? 'Email OK' : 'Email not configured';
+      const tpl = data.template_exists ? '✓ Template Ready' : '✗ Template Missing';
+      const smtp = data.smtp_configured ? '✓ Email Configured' : '⚠ Email Not Configured';
       el.textContent = `${tpl} • ${smtp}`;
       el.classList.remove('muted');
+      
+      // Add status color class
+      el.classList.remove('status-success', 'status-error', 'status-warning');
+      if (data.template_exists && data.smtp_configured) {
+        el.classList.add('status-success');
+      } else if (!data.template_exists) {
+        el.classList.add('status-error');
+      } else {
+        el.classList.add('status-warning');
+      }
     })
     .catch(() => {
       const el = document.getElementById('status');

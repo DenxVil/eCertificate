@@ -113,6 +113,10 @@ AMA Certificate Team
             body=body
         )
         
+        # Set sender if configured
+        if current_app.config.get('MAIL_DEFAULT_SENDER'):
+            msg.sender = current_app.config['MAIL_DEFAULT_SENDER']
+        
         # Attach certificate
         with open(cert_path_abs, 'rb') as cert_file:
             msg.attach(
@@ -126,5 +130,5 @@ AMA Certificate Team
         return True
         
     except Exception as e:
-        logger.error(f"Failed to send certificate email to {recipient_email}: {str(e)}")
+        logger.error(f"Failed to send certificate email to {recipient_email}: {str(e)}", exc_info=True)
         return False
