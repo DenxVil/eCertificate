@@ -261,6 +261,19 @@ Use the browser page at `/goonj` to generate a single certificate or upload a CS
 
 The repository includes **automated pixel-perfect alignment verification** with **<0.01px tolerance** and **automatic fixing**:
 
+### Reference Certificate
+
+The reference certificate is based on the **Canva design**:
+- **Design URL**: https://www.canva.com/design/DAG3WWj3eUk/yThBfXKr0YLNUBzigPzSUA/view
+- **Location**: `templates/Sample_certificate.png`
+- **Dimensions**: 2000x1414 pixels (PNG, RGB)
+
+To update the reference when the Canva design changes, see [Updating Canva Reference Documentation](docs/UPDATING_CANVA_REFERENCE.md).
+
+### Automatic Alignment Fixing (NEW ✨)
+
+The system automatically maintains pixel-perfect alignment between generated certificates and the reference:
+
 ### Automatic Alignment Fixing (NEW ✨)
 
 The system automatically maintains pixel-perfect alignment between generated certificates and the reference:
