@@ -10,7 +10,7 @@ This guide will help you get started with Denx Certificate Generator in 5 minute
 
 ## Quick Setup
 
-1. **Clone and Setup**
+1. **Clone and   Setup**
    ```bash
    git clone https://github.com/DenxVil/eCertificate.git
    cd eCertificate
@@ -19,7 +19,7 @@ This guide will help you get started with Denx Certificate Generator in 5 minute
    pip install -r requirements.txt
    ```
 
-2. **Configure Environment**
+3. **Configure Environment**
    ```bash
    cp .env.sample .env
    ```
@@ -29,14 +29,14 @@ This guide will help you get started with Denx Certificate Generator in 5 minute
    - `MAIL_USERNAME` - Your Gmail address
    - `MAIL_PASSWORD` - Your Gmail app password (see below)
 
-3. **Get Gmail App Password**
+4. **Get Gmail App Password**
    - Go to https://myaccount.google.com/security
    - Enable 2-Step Verification
    - Go to "App passwords"
    - Generate password for "Mail"
    - Copy to `MAIL_PASSWORD` in `.env`
 
-4. **Start the Application**
+5. **Start the Application**
    ```bash
    python app.py
    ```
