@@ -130,7 +130,20 @@
     
     // Show status modal
     showStatusModal();
-    updateStatus('Generating certificate...', 'progress');
+    updateStatus('Generating certificate and verifying alignment...', 'progress');
+    
+    // Simulate progress updates
+    let progressStep = 0;
+    const progressMessages = [
+      'Generating certificate and verifying alignment...',
+      'Verifying field positions...',
+      'Finalizing certificate...'
+    ];
+    
+    const progressInterval = setInterval(() => {
+      progressStep = (progressStep + 1) % progressMessages.length;
+      updateStatus(progressMessages[progressStep], 'progress');
+    }, 1500);
     
     // Prepare form data
     const formData = new FormData(form);
@@ -143,6 +156,7 @@
     })
     .then(response => response.json())
     .then(data => {
+      clearInterval(progressInterval);
       if (data.success) {
         handleSuccess(data);
       } else {
@@ -150,6 +164,7 @@
       }
     })
     .catch(error => {
+      clearInterval(progressInterval);
       handleError({ error: 'Network error', message: error.message });
     })
     .finally(() => {
@@ -223,6 +238,14 @@
           <p><strong>Status:</strong> ${data.alignment_status.passed ? '✅ Passed' : '❌ Failed'}</p>
           <p>${data.alignment_status.message}</p>
       `;
+      
+      // Show attempts if available (for retry-based verification)
+      if (data.alignment_status.attempts !== undefined) {
+        details += `<p><strong>Attempts:</strong> ${data.alignment_status.attempts}</p>`;
+      } else if (data.alignment_status.passed) {
+        // If no attempts field, it passed on first try
+        details += `<p><strong>Attempts:</strong> 1/1 (Passed on first verification)</p>`;
+      }
       
       // Show field position details if available
       if (data.alignment_status.field_positions && data.alignment_status.field_positions.fields) {
