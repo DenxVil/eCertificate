@@ -72,6 +72,16 @@ def extract_field_positions(img_path: str) -> Dict[str, Dict[str, float]]:
                 'normalized_y': text_center / height,
                 'normalized_x': text_center_x / width
             }
+            logger.debug(f"Field '{field_name}' detected at y={text_center:.2f}, x={text_center_x:.2f}")
+        else:
+            logger.warning(f"Field '{field_name}' NOT detected in search window y={y_start}-{y_end}")
+    
+    # Log summary of detected fields
+    detected_fields = list(results.keys())
+    missing_fields = [f for f in ['name', 'event', 'organiser'] if f not in detected_fields]
+    
+    if missing_fields:
+        logger.error(f"Missing fields in {img_path}: {', '.join(missing_fields)}")
     
     return results
 
@@ -88,35 +98,56 @@ def calculate_position_difference(
         reference_positions: Field positions from reference certificate
         
     Returns:
-        Dictionary with difference metrics
+        Dictionary with difference metrics including errors for missing fields
     """
     differences = {}
     max_diff = 0.0
+    missing_fields = []
     
+    # Check all three required fields
     for field_name in ['name', 'event', 'organiser']:
-        if field_name in generated_positions and field_name in reference_positions:
-            gen = generated_positions[field_name]
-            ref = reference_positions[field_name]
-            
-            y_diff = abs(gen['y_center'] - ref['y_center'])
-            x_diff = abs(gen['x_center'] - ref['x_center'])
-            
+        gen_field = generated_positions.get(field_name)
+        ref_field = reference_positions.get(field_name)
+        
+        # Check if field is missing in either certificate
+        if gen_field is None or ref_field is None:
+            missing_fields.append(field_name)
             differences[field_name] = {
-                'y_diff': y_diff,
-                'x_diff': x_diff,
-                'y_center_gen': gen['y_center'],
-                'y_center_ref': ref['y_center'],
-                'x_center_gen': gen['x_center'],
-                'x_center_ref': ref['x_center']
+                'error': 'Field not detected',
+                'detected_in_generated': gen_field is not None,
+                'detected_in_reference': ref_field is not None
             }
-            
-            # Track maximum difference
-            max_diff = max(max_diff, y_diff, x_diff)
+            # Treat missing field as maximum error
+            max_diff = float('inf')
+            continue
+        
+        # Calculate position differences for detected fields
+        y_diff = abs(gen_field['y_center'] - ref_field['y_center'])
+        x_diff = abs(gen_field['x_center'] - ref_field['x_center'])
+        
+        differences[field_name] = {
+            'y_diff': y_diff,
+            'x_diff': x_diff,
+            'y_center_gen': gen_field['y_center'],
+            'y_center_ref': ref_field['y_center'],
+            'x_center_gen': gen_field['x_center'],
+            'x_center_ref': ref_field['x_center']
+        }
+        
+        # Track maximum difference
+        max_diff = max(max_diff, y_diff, x_diff)
     
-    return {
+    result = {
         'fields': differences,
         'max_difference_px': max_diff
     }
+    
+    # Add warning about missing fields
+    if missing_fields:
+        result['missing_fields'] = missing_fields
+        result['error'] = f"Missing fields: {', '.join(missing_fields)}"
+    
+    return result
 
 
 def verify_alignment_with_retries(
@@ -139,7 +170,7 @@ def verify_alignment_with_retries(
         generated_cert_path: Path to generated certificate
         reference_cert_path: Path to reference sample certificate
         tolerance_px: Maximum allowed difference in pixels (default: 0.02)
-        max_attempts: Maximum number of verification attempts (default: 100)
+        max_attempts: Maximum number of verification attempts (default: 30)
         regenerate_func: Optional function to regenerate certificate on failure
         progress_callback: Optional callback for progress updates (receives attempt number)
         
@@ -195,6 +226,22 @@ def verify_alignment_with_retries(
             # Calculate differences
             diff_result = calculate_position_difference(generated_positions, reference_positions)
             max_diff = diff_result['max_difference_px']
+            
+            # Log individual field differences for debugging
+            if 'missing_fields' in diff_result:
+                logger.error(f"Attempt {attempt}: {diff_result['error']}")
+            
+            # Log each field's alignment
+            for field_name in ['name', 'event', 'organiser']:
+                if field_name in diff_result['fields']:
+                    field_diff = diff_result['fields'][field_name]
+                    if 'error' in field_diff:
+                        logger.warning(f"  {field_name}: {field_diff['error']}")
+                    else:
+                        logger.info(
+                            f"  {field_name}: y_diff={field_diff['y_diff']:.2f}px, "
+                            f"x_diff={field_diff['x_diff']:.2f}px"
+                        )
             
             logger.info(f"Attempt {attempt}: Max difference = {max_diff:.4f} px (tolerance: {tolerance_px} px)")
             

@@ -33,7 +33,7 @@ _alignment_progress = {}
 @goonj_bp.route('/', methods=['GET'])
 def goonj_page():
     """Render the GOONJ UI page."""
-    email_max_retries = current_app.config.get('EMAIL_MAX_RETRIES', 150)
+    email_max_retries = current_app.config.get('EMAIL_MAX_RETRIES', 3)
     return render_template('goonj.html', email_max_retries=email_max_retries)
 
 
@@ -329,7 +329,7 @@ def generate_certificate():
                         return new_cert_path
                     
                     # Iterative alignment verification with automatic retry and regeneration
-                    # This will automatically retry up to max_attempts times (default: 150)
+                    # This will automatically retry up to max_attempts times (configurable via ALIGNMENT_MAX_ATTEMPTS)
                     # regenerating the certificate each time until alignment is achieved
                     verification_result = verify_alignment_with_retries(
                         cert_path_abs,

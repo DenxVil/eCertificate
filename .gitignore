@@ -147,3 +147,8 @@ AzureCLI.zip
 generated_certificates/
 uploads/
 test_output/
+
+# Alignment cache and statistics
+alignment_cache.json
+alignment_stats.json
+alignment_stats_export.json

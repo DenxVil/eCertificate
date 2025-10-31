@@ -37,10 +37,16 @@ class Config:
     # Alignment verification settings
     ENABLE_ALIGNMENT_CHECK = os.getenv('ENABLE_ALIGNMENT_CHECK', 'True').lower() == 'true'
     ALIGNMENT_TOLERANCE_PX = float(os.getenv('ALIGNMENT_TOLERANCE_PX', '0.01'))
-    ALIGNMENT_MAX_ATTEMPTS = int(os.getenv('ALIGNMENT_MAX_ATTEMPTS', '150'))
+    ALIGNMENT_MAX_ATTEMPTS = int(os.getenv('ALIGNMENT_MAX_ATTEMPTS', '30'))
+    
+    # Advanced alignment features
+    ENABLE_POSITION_CACHE = os.getenv('ENABLE_POSITION_CACHE', 'True').lower() == 'true'
+    ENABLE_PROGRESSIVE_REFINEMENT = os.getenv('ENABLE_PROGRESSIVE_REFINEMENT', 'True').lower() == 'true'
+    ENABLE_ALIGNMENT_STATS = os.getenv('ENABLE_ALIGNMENT_STATS', 'True').lower() == 'true'
+    POSITION_CACHE_TTL_HOURS = int(os.getenv('POSITION_CACHE_TTL_HOURS', '24'))
     
     # Email retry settings
-    EMAIL_MAX_RETRIES = int(os.getenv('EMAIL_MAX_RETRIES', '150'))
+    EMAIL_MAX_RETRIES = int(os.getenv('EMAIL_MAX_RETRIES', '3'))
     
     # Field position verification settings
     FIELD_POSITION_TOLERANCE_PX = int(os.getenv('FIELD_POSITION_TOLERANCE_PX', '2'))

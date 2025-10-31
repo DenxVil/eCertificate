@@ -19,11 +19,11 @@ def send_certificate_email(recipient_email, recipient_name, event_name, certific
         recipient_name: Name of recipient
         event_name: Name of the event
         certificate_path: Path to certificate file
-        retries: Number of retry attempts (defaults to EMAIL_MAX_RETRIES from config, or 150)
+        retries: Number of retry attempts (defaults to EMAIL_MAX_RETRIES from config, or 3)
     """
     # Get retry count from config if not specified
     if retries is None:
-        retries = current_app.config.get('EMAIL_MAX_RETRIES', 150)
+        retries = current_app.config.get('EMAIL_MAX_RETRIES', 3)
     
     subject = f"Certificate of Participation - {event_name}"
 

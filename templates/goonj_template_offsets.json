@@ -25,7 +25,6 @@
     }
   },
   "tolerance_px": 0.02,
-  "max_attempts": 100,
   "calibration_date": "2025-10-31",
-  "notes": "Field positions precisely extracted from Sample_certificate.png. Supports iterative verification with up to 100 attempts to achieve max 0.02px difference."
+  "notes": "Field positions precisely extracted from Sample_certificate.png. Max attempts and other settings are now configured via .env file (ALIGNMENT_MAX_ATTEMPTS)."
 }
