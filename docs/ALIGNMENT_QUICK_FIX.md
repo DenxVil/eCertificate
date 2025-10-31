@@ -58,7 +58,7 @@ python tools/diagnose_alignment.py generated_certificates/your_cert.png
    X difference:    0.00 px  (gen= 951.00, ref= 951.00)
 
 ✅ PERFECT ORGANISER:
-   Y difference:    0.00 px  (gen= 894.50, ref=1043.50)
+   Y difference:    0.00 px  (gen= 894.50, ref= 894.50)
    X difference:    0.00 px  (gen=1043.50, ref=1043.50)
 ```
 
