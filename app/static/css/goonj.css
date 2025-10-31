@@ -21,6 +21,11 @@
   --shadow-lg: 0 8px 24px rgba(2, 6, 23, 0.12);
   --shadow-xl: 0 16px 48px rgba(2, 6, 23, 0.16);
   --input-focus-ring: rgba(147, 197, 253, 0.35);
+  
+  /* Status colors */
+  --status-success: #22c55e;
+  --status-error: #ef4444;
+  --status-warning: #f59e0b;
 }
 
 /* Dark theme */
@@ -482,5 +487,18 @@ input[type="file"] {
     box-shadow: none;
     border: 1px solid #000;
   }
+}
+
+/* Status color classes */
+.status-success {
+  color: var(--status-success) !important;
+}
+
+.status-error {
+  color: var(--status-error) !important;
+}
+
+.status-warning {
+  color: var(--status-warning) !important;
 }
 

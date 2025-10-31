@@ -3,6 +3,7 @@ from flask_mail import Mail, Message
 from flask import current_app
 import os
 import logging
+import time
 
 mail = Mail()
 logger = logging.getLogger(__name__)
@@ -13,7 +14,6 @@ def send_certificate_email(recipient_email, recipient_name, event_name, certific
 
     Returns True if sent, False otherwise. Retries a few times on transient errors.
     """
-    import time
     subject = f"Certificate of Participation - {event_name}"
 
     body = f"""

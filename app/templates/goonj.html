@@ -139,13 +139,14 @@
       el.textContent = `${tpl} • ${smtp}`;
       el.classList.remove('muted');
       
-      // Add color coding
+      // Add status color class
+      el.classList.remove('status-success', 'status-error', 'status-warning');
       if (data.template_exists && data.smtp_configured) {
-        el.style.color = 'var(--success, #22c55e)';
+        el.classList.add('status-success');
       } else if (!data.template_exists) {
-        el.style.color = 'var(--error, #ef4444)';
+        el.classList.add('status-error');
       } else {
-        el.style.color = 'var(--warning, #f59e0b)';
+        el.classList.add('status-warning');
       }
     })
     .catch(() => {

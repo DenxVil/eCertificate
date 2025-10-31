@@ -58,13 +58,9 @@ def create_app(config_name='default'):
             db.create_all()
             logger.info("Database tables initialized successfully")
         except Exception as e:
-            # Check if error is about tables already existing
-            error_msg = str(e).lower()
-            if 'already exists' in error_msg:
-                logger.info("Database tables already exist, skipping creation")
-            else:
-                logger.error(f"Failed to initialize database tables: {e}")
-                # Don't raise - allow app to start but it may have issues
+            # SQLAlchemy's create_all() should be idempotent, but log any unexpected errors
+            logger.error(f"Failed to initialize database tables: {e}")
+            # Don't raise - allow app to start but it may have issues
     
     # Initialize mail
     try:
