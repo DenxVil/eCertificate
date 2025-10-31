@@ -12,6 +12,10 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+# Constants for text detection
+TEXT_THRESHOLD = 200  # Pixel brightness threshold for detecting text (0-255)
+MIN_TEXT_PIXELS = 50  # Minimum number of dark pixels per row to consider it text
+
 
 def find_text_field_positions(img_path, height=1414):
     """
@@ -51,10 +55,10 @@ def find_text_field_positions(img_path, height=1414):
         
         # Count dark pixels (text) in each row
         # Text pixels are typically darker than background
-        dark_pixels_per_row = np.sum(slice_arr < 200, axis=1)
+        dark_pixels_per_row = np.sum(slice_arr < TEXT_THRESHOLD, axis=1)
         
         # Find rows with significant text content
-        text_rows = np.where(dark_pixels_per_row > 50)[0]
+        text_rows = np.where(dark_pixels_per_row > MIN_TEXT_PIXELS)[0]
         
         if len(text_rows) > 0:
             text_start = y_start + text_rows[0]

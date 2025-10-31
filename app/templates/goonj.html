@@ -117,6 +117,8 @@
   })();
   
   // Form submission with AJAX and status display
+  const PROGRESS_UPDATE_INTERVAL = 1500; // milliseconds
+  
   function handleFormSubmit(event, form) {
     event.preventDefault();
     
@@ -143,7 +145,7 @@
     const progressInterval = setInterval(() => {
       progressStep = (progressStep + 1) % progressMessages.length;
       updateStatus(progressMessages[progressStep], 'progress');
-    }, 1500);
+    }, PROGRESS_UPDATE_INTERVAL);
     
     // Prepare form data
     const formData = new FormData(form);

@@ -304,10 +304,13 @@ def generate_certificate():
                 
                 if os.path.exists(sample_cert_path):
                     try:
+                        # Get field position tolerance from config
+                        tolerance_px = current_app.config.get('FIELD_POSITION_TOLERANCE_PX', 2)
+                        
                         field_position_result = verify_field_positions(
                             cert_path_abs,
                             sample_cert_path,
-                            tolerance_px=2  # Allow 2px tolerance for field positions
+                            tolerance_px=tolerance_px
                         )
                         
                         alignment_status['field_positions'] = field_position_result

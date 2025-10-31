@@ -39,6 +39,9 @@ class Config:
     ALIGNMENT_TOLERANCE_PX = float(os.getenv('ALIGNMENT_TOLERANCE_PX', '0.01'))
     ALIGNMENT_MAX_ATTEMPTS = int(os.getenv('ALIGNMENT_MAX_ATTEMPTS', '150'))
     
+    # Field position verification settings
+    FIELD_POSITION_TOLERANCE_PX = int(os.getenv('FIELD_POSITION_TOLERANCE_PX', '2'))
+    
     # Validation settings (dev mode only)
     DEBUG_VALIDATE = os.getenv('DEBUG_VALIDATE', 'True').lower() == 'true'
     VALIDATE_TOLERANCE_PX = int(os.getenv('VALIDATE_TOLERANCE_PX', 3))
