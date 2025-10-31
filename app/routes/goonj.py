@@ -266,7 +266,7 @@ def generate_certificate():
         # ALIGNMENT VERIFICATION: Iterative verification with retry logic
         # This ensures field positions match Sample_certificate.png within 0.02px tolerance
         alignment_enabled = current_app.config.get('ENABLE_ALIGNMENT_CHECK', True)
-        max_attempts_config = current_app.config.get('ALIGNMENT_MAX_ATTEMPTS', 150)
+        max_attempts_config = current_app.config.get('ALIGNMENT_MAX_ATTEMPTS', 30)
         alignment_status = {
             'enabled': alignment_enabled,
             'passed': True,
