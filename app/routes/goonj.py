@@ -201,7 +201,7 @@ def generate_certificate():
         # ALIGNMENT VERIFICATION: Ensure generated certificate matches sample with <0.01px difference
         # This is critical for standardization and must pass before sending
         alignment_enabled = current_app.config.get('ENABLE_ALIGNMENT_CHECK', True)
-        alignment_max_attempts = current_app.config.get('ALIGNMENT_MAX_ATTEMPTS', 3)
+        alignment_max_attempts = current_app.config.get('ALIGNMENT_MAX_ATTEMPTS', 150)
         alignment_tolerance_px = current_app.config.get('ALIGNMENT_TOLERANCE_PX', 0.01)
         
         if alignment_enabled:
