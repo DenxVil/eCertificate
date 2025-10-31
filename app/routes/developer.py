@@ -65,7 +65,14 @@ def get_env_configuration():
         if is_set and any(keyword in var_name.lower() for keyword in ['password', 'secret', 'token', 'key']):
             display_value = '***HIDDEN***'
         elif is_set:
-            display_value = env_value or flask_value
+            # Handle sets and other non-JSON-serializable types
+            value = env_value or flask_value
+            if isinstance(value, set):
+                display_value = ', '.join(sorted(value))
+            elif isinstance(value, (list, tuple)):
+                display_value = ', '.join(str(v) for v in value)
+            else:
+                display_value = str(value)
         else:
             display_value = None
         
