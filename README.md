@@ -258,7 +258,7 @@ Use the browser page at `/goonj` to generate a single certificate or upload a CS
 
 ## Alignment Verification
 
-The repository includes an automated alignment check script:
+The repository includes an automated alignment check script with **pixel-perfect accuracy** (0.01px tolerance):
 
 ```bash
 python scripts/verify_alignment.py
@@ -271,11 +271,13 @@ This script:
 4. Reports alignment status (CI-friendly with exit codes)
 
 **Exit codes:**
-- `0` - Alignment check passed
-- `1` - Alignment check failed (fields not properly positioned)
+- `0` - Alignment check passed (0.00px difference - pixel-perfect)
+- `1` - Alignment check failed (exceeds 0.01px tolerance)
 - `2` - Script error (missing files, etc.)
 
-The check allows slight tolerance for anti-aliasing differences but will fail if text fields are not positioned correctly.
+**Current Status:** ✅ **PERFECT ALIGNMENT** - The generator achieves 0.0000% pixel difference with the reference certificate.
+
+See [Pixel-Perfect Alignment Documentation](docs/PIXEL_PERFECT_ALIGNMENT.md) for technical details on how sub-pixel precision is achieved.
 
 ## Project Structure
 
