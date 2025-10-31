@@ -37,10 +37,10 @@ class Config:
     # Alignment verification settings
     ENABLE_ALIGNMENT_CHECK = os.getenv('ENABLE_ALIGNMENT_CHECK', 'True').lower() == 'true'
     ALIGNMENT_TOLERANCE_PX = float(os.getenv('ALIGNMENT_TOLERANCE_PX', '0.01'))
-    ALIGNMENT_MAX_ATTEMPTS = int(os.getenv('ALIGNMENT_MAX_ATTEMPTS', '3'))
+    ALIGNMENT_MAX_ATTEMPTS = int(os.getenv('ALIGNMENT_MAX_ATTEMPTS', '150'))
     
     # Validation settings (dev mode only)
-    DEBUG_VALIDATE = os.getenv('DEBUG_VALIDATE', 'False').lower() == 'true'
+    DEBUG_VALIDATE = os.getenv('DEBUG_VALIDATE', 'True').lower() == 'true'
     VALIDATE_TOLERANCE_PX = int(os.getenv('VALIDATE_TOLERANCE_PX', 3))
 
 
