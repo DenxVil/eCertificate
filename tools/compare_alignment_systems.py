@@ -351,6 +351,34 @@ class AlignmentSystemComparator:
         result = Image.alpha_composite(cert, text_layer)
         return result.convert('RGB')
     
+    # System 13: PPTX-extracted positions
+    def system_13_pptx_extracted(self):
+        """PIL with positions extracted from PowerPoint PPTX file."""
+        # Load PPTX config if available
+        pptx_config_path = Path(self.template_path).parent / 'pptx_extracted_offsets.json'
+        if not pptx_config_path.exists():
+            # Fallback to system 2
+            return self.system_2_pil_original_sizes()
+        
+        with open(pptx_config_path, 'r') as f:
+            pptx_config = json.load(f)
+        
+        cert = self.template.copy()
+        draw = ImageDraw.Draw(cert)
+        
+        for field_name, text in [('name', self.sample_text['name']),
+                                  ('event', self.sample_text['event']),
+                                  ('organiser', self.sample_text['organiser'])]:
+            field = pptx_config['fields'][field_name]
+            x = field['x'] * self.width
+            y = field['y'] * self.height
+            font_size = field['font_size']
+            
+            font = ImageFont.truetype(self.font_path, font_size)
+            self.render_text_centered(draw, x, y, text, font)
+        
+        return cert
+    
     def run_all_systems(self, output_dir):
         """Run all alignment systems and save results."""
         systems = [
@@ -366,6 +394,7 @@ class AlignmentSystemComparator:
             ("System 10: PIL Adjusted Positions", self.system_10_pil_adjusted_positions),
             ("System 11: PIL Larger Fonts", self.system_11_pil_larger_fonts),
             ("System 12: PIL Alpha Composite", self.system_12_pil_alpha_composite),
+            ("System 13: PPTX Extracted", self.system_13_pptx_extracted),
         ]
         
         logger.info("=" * 80)
