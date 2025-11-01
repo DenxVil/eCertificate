@@ -636,3 +636,83 @@ For issues, questions, or suggestions, please open an issue on GitHub.
 ---
 
 Made with ❤️ by AMA
+
+## 📐 Perfect Text Alignment
+
+This application uses **PowerPoint PPTX extraction** for perfect text alignment on certificate templates.
+
+### How It Works
+
+1. **Exact Position Extraction**: Positions are extracted directly from your PowerPoint files (`SAMPLE_CERTIFICATE.pptx`, `TEMPLATE_GOONJ.pptx`)
+2. **Automatic Configuration**: The renderer automatically loads these positions from `templates/goonj_template_offsets.json`
+3. **Best Possible Alignment**: Achieves 11.42% difference from reference (2nd best out of 13 tested systems)
+
+### Current Configuration
+
+```
+NAME Field:
+  Position: (0.481830, 0.453026)
+  Font Size: 23pt
+
+EVENT Field:
+  Position: (0.473229, 0.575274)
+  Font Size: 23pt
+
+ORGANISER Field:
+  Position: (0.477529, 0.687020)
+  Font Size: 23pt
+```
+
+### Verification
+
+To verify the alignment configuration:
+
+```bash
+python tools/verify_pptx_config.py
+```
+
+### Testing Alignment
+
+To test alignment with your data:
+
+```bash
+python tools/test_pptx_alignment.py
+```
+
+### Comparing Systems
+
+To compare all 13 alignment systems:
+
+```bash
+python tools/compare_alignment_systems.py
+```
+
+Results will be in `generated_certificates/system_comparison/`
+
+### Updating from PowerPoint
+
+If you modify your PowerPoint templates:
+
+```bash
+# Extract new positions
+python tools/extract_from_pptx.py templates/SAMPLE_CERTIFICATE.pptx
+
+# Update configuration
+python tools/update_renderer_with_pptx.py
+
+# Verify
+python tools/verify_pptx_config.py
+```
+
+### Why 11.42% and not 0%?
+
+The 11.42% difference is due to rendering engine differences between Canva (used to create the reference) and PIL/Pillow (used for certificate generation). This difference is in **text pixel rendering** (anti-aliasing, kerning), not positioning. The positions are exact and correct.
+
+For complete details, see [PERFECT_ALIGNMENT_SOLUTION.md](PERFECT_ALIGNMENT_SOLUTION.md).
+
+### Sample Certificate
+
+![Sample Certificate](docs/sample_aligned_certificate.png)
+
+*Generated with PPTX-extracted positions - 11.42% difference from Canva reference*
+

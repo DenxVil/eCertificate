@@ -41,27 +41,27 @@ class GOONJRenderer:
         
         # Define bounding boxes for GOONJ certificate (supports three fields only)
         # Positions as percentage of template height for vertical placement
-        # Font sizes tuned to match Sample_certificate.png
+        # Font sizes from PPTX extraction or defaults
         self.name_bbox = {
-            'x': width // 2,
+            'x': int(width * self.field_offsets['name']['x']),
             'y': int(height * self.field_offsets['name']['y']),
-            'base_font_size': 250,  # Tuned to match reference (reference analysis: 346pt, but actual is smaller)
+            'base_font_size': self.field_offsets['name'].get('font_size', 250),  # From PPTX: 23pt, fallback: 250pt
             'color': '#000000',  # Pure black
             'baseline_offset': self.field_offsets['name'].get('baseline_offset', 0)
         }
         
         self.event_bbox = {
-            'x': width // 2,
+            'x': int(width * self.field_offsets['event']['x']),
             'y': int(height * self.field_offsets['event']['y']),
-            'base_font_size': 100,  # Tuned to match reference (reference analysis: 170pt, but actual is smaller)
+            'base_font_size': self.field_offsets['event'].get('font_size', 100),  # From PPTX: 23pt, fallback: 100pt
             'color': '#000000',  # Pure black
             'baseline_offset': self.field_offsets['event'].get('baseline_offset', 0)
         }
         
         self.organiser_bbox = {
-            'x': width // 2,
+            'x': int(width * self.field_offsets['organiser']['x']),
             'y': int(height * self.field_offsets['organiser']['y']),
-            'base_font_size': 110,  # Tuned to match reference (reference analysis: 102pt, need slight increase)
+            'base_font_size': self.field_offsets['organiser'].get('font_size', 110),  # From PPTX: 23pt, fallback: 110pt
             'color': '#000000',  # Pure black
             'baseline_offset': self.field_offsets['organiser'].get('baseline_offset', 0)
         }
@@ -79,9 +79,9 @@ class GOONJRenderer:
         """
         # Default offsets
         self.field_offsets = {
-            'name': {'x': 0.5, 'y': 0.33, 'baseline_offset': 0},
-            'event': {'x': 0.5, 'y': 0.42, 'baseline_offset': 0},
-            'organiser': {'x': 0.5, 'y': 0.51, 'baseline_offset': 0}
+            'name': {'x': 0.5, 'y': 0.33, 'font_size': 250, 'baseline_offset': 0},
+            'event': {'x': 0.5, 'y': 0.42, 'font_size': 100, 'baseline_offset': 0},
+            'organiser': {'x': 0.5, 'y': 0.51, 'font_size': 110, 'baseline_offset': 0}
         }
         
         # Try to load from JSON file
