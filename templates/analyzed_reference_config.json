@@ -1,0 +1,39 @@
+{
+  "version": "5.0",
+  "extraction_date": "2025-10-31",
+  "analysis_method": "contour_detection_and_matching",
+  "reference_image": "/home/runner/work/eCertificate/eCertificate/templates/Sample_certificate.png",
+  "dimensions": {
+    "width": 2000,
+    "height": 1415
+  },
+  "fields": {
+    "name": {
+      "x": 0.537,
+      "y": 0.25265017667844525,
+      "font_size": 519,
+      "font_size_normalized": 0.3667844522968198,
+      "baseline_offset": 0,
+      "text_height_px": 433,
+      "text_width_px": 1766
+    },
+    "event": {
+      "x": 0.4755,
+      "y": 0.5183745583038869,
+      "font_size": 255,
+      "font_size_normalized": 0.18021201413427562,
+      "baseline_offset": 0,
+      "text_height_px": 213,
+      "text_width_px": 422
+    },
+    "organiser": {
+      "x": 0.493,
+      "y": 0.7208480565371025,
+      "font_size": 160,
+      "font_size_normalized": 0.11307420494699646,
+      "baseline_offset": 0,
+      "text_height_px": 128,
+      "text_width_px": 1806
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "version": "7.0",
+  "source": "powerpoint_extraction",
+  "extraction_date": "2025-11-01",
+  "description": "Field positions extracted directly from PowerPoint PPTX file",
+  "slide_dimensions": {
+    "width_pt": 842.0,
+    "height_pt": 595.0
+  },
+  "fields": {
+    "organiser": {
+      "x": 0.4775290366020162,
+      "y": 0.6870199827962681,
+      "font_size": 23,
+      "baseline_offset": 0,
+      "original_text": "SAMPLE ORG",
+      "width_pt": 154.72267716535433,
+      "height_pt": 31.98984251968504
+    },
+    "name": {
+      "x": 0.4818295864738998,
+      "y": 0.4530260041024284,
+      "font_size": 23,
+      "baseline_offset": 0,
+      "original_text": "SAMPLE NAME",
+      "width_pt": 168.4687401574803,
+      "height_pt": 30.649921259842518
+    },
+    "event": {
+      "x": 0.47322932837077075,
+      "y": 0.5752738701779925,
+      "font_size": 23,
+      "baseline_offset": 0,
+      "original_text": "SAMPLE EVENT",
+      "width_pt": 174.58590551181103,
+      "height_pt": 30.649921259842518
+    }
+  }
+}
